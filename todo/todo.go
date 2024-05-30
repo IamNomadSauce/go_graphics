@@ -2,7 +2,7 @@ package todo
 
 import (
 	"fmt"
-	"go_graphics/common"
+	"gogtk/common"
 
 	"github.com/gotk3/gotk3/gtk"
 )
