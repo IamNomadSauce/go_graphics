@@ -107,6 +107,9 @@ func main() {
 	}
 	drawArea.SetSizeRequest(1200, 800)
 
+  // Comment for magic temp
+
+
 	notebook, err := gtk.NotebookNew()
 	if err != nil {
 		fmt.Println("Unable to create notebook", err)
