@@ -1,61 +1,10 @@
-// package main
-//
-// import (
-// 	//"go_gtk/finance"
-//
-// 	"fmt"
-// 	"gogtk/subpage"
-// 	"log"
-//
-// 	"github.com/gotk3/gotk3/gtk"
-// )
-//
-// func main() {
-// 	gtk.Init(nil)
-//
-// 	// Create the main notebook
-// 	notebook, err := gtk.NotebookNew()
-// 	if err != nil {
-// 		log.Fatal("Failed to create notebook:", err)
-// 	}
-// 	savings, err := subpage.CreateSavings()
-// 	if err != nil {
-// 		fmt.Println("Error creating SavingsPage", err)
-// 	}
-// 	equities, err := subpage.CreateEquities()
-// 	if err != nil {
-// 		fmt.Println("Error creating EquitiesPage", err)
-// 	}
-// 	crypto, err := subpage.CreateCrypto()
-// 	if err != nil {
-// 		fmt.Println("Error creating CryptoPage", err)
-// 	}
-//
-// 	notebook.AppendPage(savings, nil)
-// 	notebook.AppendPage(equities, nil)
-// 	notebook.AppendPage(crypto, nil)
-//
-//
-//
-// 	// Add the notebook to the window and show everything
-// 	window, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-// 	if err != nil {
-// 		log.Fatal("Failed to create window:", err)
-// 	}
-// 	// notebook.AppendPage(finance.FinancePage(), nil)
-// 	window.Add(notebook)
-// 	window.SetDefaultSize(800, 600)
-// 	window.ShowAll()
-//
-// 	gtk.Main()
-// }
-
 package main
 
 import (
 	"fmt"
 	"gogtk/digraph"
 	"gogtk/todo"
+  "gogtk/finance"
 	"time"
 
 	"github.com/gotk3/gotk3/gtk"
@@ -132,10 +81,10 @@ func main() {
 			Title:   "Todo",
 			Content: todo.ToDoPage(),
 		},
-		// {
-		// 	Title:   "Finances",
-		// 	Content: finance.FinancePage(),
-		// },
+		{
+		  Title:   "Finances",
+		  Content: finance.FinancePage(),
+		},
 	}
 
 	// Add pages to the notebook
