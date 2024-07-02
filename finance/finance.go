@@ -6,6 +6,7 @@ import (
 	"github.com/gotk3/gotk3/gtk"
   "gogtk/finance/crypto"
   "gogtk/finance/equities"
+  "gogtk/finance/banking"
 )
 
 func FinancePage() *gtk.Box{
@@ -71,7 +72,17 @@ func FinancePage() *gtk.Box{
     return nil
   }
   financeStack.AddTitled(equitiesPage, "Equities", "Equities")
+
+  // ----------------------------------------------------------------------------------------------------
   
+  bankingPage, err := banking.BankingPage()
+  if err != nil {
+    return nil
+  }
+  financeStack.AddTitled(bankingPage, "Banking", "Banking")
+  
+
+
   // ----------------------------------------------------------------------------------------------------
   //
   //
