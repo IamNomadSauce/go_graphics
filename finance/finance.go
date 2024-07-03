@@ -33,29 +33,6 @@ func FinancePage() *gtk.Box{
 
   //--------------------------------------------------
 
-  savingsPage, err := createSavingsTab()
-  if err != nil {
-    return nil
-  }
-
-  financeStack.AddTitled(savingsPage, "Savings", "Savings")
-
-  //--------------------------------------------------
-  
-  checkingPage, err := createCheckingTab()
-  if err != nil {
-    return nil
-  }
-  financeStack.AddTitled(checkingPage, "Checking", "checking")
-
-  //--------------------------------------------------
-  
-  investmentsPage, err := createInvestmentsTab()
-  if err != nil {
-    return nil
-  }
-
-  financeStack.AddTitled(investmentsPage, "Investments", "Investments")
 
   //--------------------------------------------------
 
