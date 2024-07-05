@@ -46,7 +46,7 @@ func CryptoPage() (*gtk.Box, error) {
     drawingArea.Connect("button-release-event", onMouseRelease)
     drawingArea.Connect("scroll-event", onScroll)
 
-    for i := 0; i < 500; i++ {
+    for i := 0; i < 100; i++ {
         points = append(points, Point{X: rand.Float64(), Y: rand.Float64()})
     }
 
@@ -64,13 +64,14 @@ func drawScatterPlot(da *gtk.DrawingArea, cr *cairo.Context) {
 
     // Apply transformations
     cr.Save()
-    cr.Translate(40 + offsetX, height - 40 + offsetY)
-    cr.Scale(scale, -scale)
+    cr.Translate(40, height - 40)  // Move origin to bottom-left corner of plot area
+    cr.Scale(scale, -scale)  // Flip Y-axis and apply zoom
+    cr.Translate(offsetX/scale, offsetY/scale)  // Apply pan
 
     // Draw scatter points
     cr.SetSourceRGB(1, 0, 0)
     for _, p := range points {
-        cr.Arc(p.X, p.Y, 5/scale, 0, 2*math.Pi)
+        cr.Arc(p.X*(width-80), p.Y*(height-80), 10/scale, 0, 2*math.Pi)
         cr.Fill()
     }
 
@@ -88,8 +89,8 @@ func drawScatterPlot(da *gtk.DrawingArea, cr *cairo.Context) {
     // Calculate the visible range
     minX := -offsetX / scale
     maxX := (width - 80 - offsetX) / scale
-    minY := -(height - 80 + offsetY) / scale
-    maxY := -offsetY / scale
+    minY := offsetY / scale
+    maxY := (height - 80 + offsetY) / scale
 
     // Setting up Axis Labels
     cr.SetFontSize(12)
@@ -128,7 +129,7 @@ func onMouseMove(da *gtk.DrawingArea, event *gdk.Event) {
         dx := x - lastX
         dy := y - lastY
         offsetX += dx
-        offsetY += dy
+        offsetY -= dy  // Invert the Y-axis movement
         lastX, lastY = x, y
 
         da.QueueDraw()
@@ -146,9 +147,14 @@ func onScroll(da *gtk.DrawingArea, event *gdk.Event) {
     scrollEvent := gdk.EventScrollNewFromEvent(event)
     direction := scrollEvent.Direction()
 
-    x := scrollEvent.X() - 40
-    y := scrollEvent.Y() - 40
+    //width := float64(da.GetAllocatedWidth())
+    height := float64(da.GetAllocatedHeight())
 
+    // Get mouse position relative to the drawing area
+    x := scrollEvent.X() - 40
+    y := height - scrollEvent.Y() - 40  // Flip Y coordinate
+
+    // Calculate world coordinates before zooming
     worldX := (x - offsetX) / scale
     worldY := (y - offsetY) / scale
 
@@ -165,5 +171,4 @@ func onScroll(da *gtk.DrawingArea, event *gdk.Event) {
 
     da.QueueDraw()
 }
-
 

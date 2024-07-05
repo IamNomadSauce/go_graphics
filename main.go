@@ -65,6 +65,10 @@ func main() {
 	}
 	pages := []Page{
 		{
+		  Title:   "Finances",
+		  Content: finance.FinancePage(),
+		},
+		{
 			Title:   "DiGraph",
 			Content: digraph.DiGraphPage(),
 		},
@@ -80,10 +84,6 @@ func main() {
 		{
 			Title:   "Todo",
 			Content: todo.ToDoPage(),
-		},
-		{
-		  Title:   "Finances",
-		  Content: finance.FinancePage(),
 		},
 	}
 
