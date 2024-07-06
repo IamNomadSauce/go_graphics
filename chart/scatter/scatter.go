@@ -24,14 +24,14 @@ type Scatter struct {
   ClickedPoint    *Point
 }
 
-func NewCart(points []Point) *Chart {
-  return &Chart{
-    Points: points
+func NewCart(points []Point) *Scatter {
+  return &Scatter{
+    Points: points,
     Scale: 1.0,
   }
 }
 
-func (c *Chart) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
+func (c *Scatter) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
   width := float64(da.GetAllocatedWidth())
   height := float64(da.GetAllocatedHeight())
 
@@ -45,14 +45,13 @@ func (c *Chart) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
   cr.Translate(c.OffsetX/c.Scale, c.OffsetY/c.Scale)
 
   cr.SetSourceRGB(1,0,0)
-  size := 10.0
   for _, p := range c.Points {
     x := p.X * (width-80)
     y := p.Y * (height-80)
     if c.HoveredPoint != nil && p == *c.HoveredPoint {
-      cr.SetSource(0,1,0)
+      cr.SetSourceRGB(0,1,0)
     } else {
-      cr.SetSource(1,0,0)
+      cr.SetSourceRGB(1,0,0)
     }
     cr.Arc(x, y, 10/c.Scale, 0, 2*math.Pi)
     cr.Fill()
@@ -67,6 +66,11 @@ func (c *Chart) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
   cr.MoveTo(40,40)
   cr.LineTo(40, height-40) // Y-Axis
   cr.Stroke()
+
+  minX := -c.OffsetX / c.Scale
+  maxX := (width-80 - c.OffsetX) / c.Scale
+  minY := c.OffsetY / c.Scale
+  maxY := (height-80+c.OffsetY) / c.Scale
 
   // Axis Labels setup
   cr.SetFontSize(12)
@@ -89,14 +93,17 @@ func (c *Chart) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
   }
 }
 
-func (c *Chart) OnMousePress(da *gtk.DrawingArea, event *gtk.Event) {
+func (c *Scatter) OnMousePress(da *gtk.DrawingArea, event *gdk.Event) {
   buttonEvent := gdk.EventButtonNewFromEvent(event)
   if buttonEvent.Button() == gdk.BUTTON_PRIMARY {
     c.Dragging = true
     c.LastX, c.LastY = buttonEvent.MotionVal()
 
+    x := (buttonEvent.X() - 40 - c.OffsetY) / c.Scale
+    y := (float64(da.GetAllocatedHeight()) - buttonEvent.Y() - 40 - c.OffsetY) / c.Scale
+
     // Check if a point is clicked
-    for _, p range c.Points {
+    for _, p := range c.Points {
       px := p.X * (float64(da.GetAllocatedWidth()) - 80)
       py := p.Y * (float64(da.GetAllocatedHeight()) - 80)
       if math.Hypot(px-x, py-y) <= 10/c.Scale {
@@ -108,10 +115,10 @@ func (c *Chart) OnMousePress(da *gtk.DrawingArea, event *gtk.Event) {
   }
 }
 
-func (c *Chart) OnMouseMove(da *gtk.DrawingArea, event *gdk.Event) {
+func (c *Scatter) OnMouseMove(da *gtk.DrawingArea, event *gdk.Event) {
   motionEvent := gdk.EventMotionNewFromEvent(event)
   x, y := motionEvent.MotionVal()
-  if c.Draggind {
+  if c.Dragging {
     dx := x - c.LastX
     dy := y - c.LastY
     c.OffsetX += dx
@@ -137,14 +144,14 @@ func (c *Chart) OnMouseMove(da *gtk.DrawingArea, event *gdk.Event) {
   }
 }
 
-func (c *Chart) OnMouseRelease(da *gtk.DrawingArea, event *gdk.Event) {
+func (c *Scatter) OnMouseRelease(da *gtk.DrawingArea, event *gdk.Event) {
   buttonEvent := gdk.EventButtonNewFromEvent(event)
   if buttonEvent.Button() == gdk.BUTTON_PRIMARY {
     c.Dragging = false
   }
 }
 
-func (c *Chart) OnScroll(da *gtk.DrawingArea, event *gdk.Event) {
+func (c *Scatter) OnScroll(da *gtk.DrawingArea, event *gdk.Event) {
   scrollEvent := gdk.EventScrollNewFromEvent(event) 
   direction := scrollEvent.Direction()
 
@@ -161,7 +168,7 @@ func (c *Chart) OnScroll(da *gtk.DrawingArea, event *gdk.Event) {
   oldScale := c.Scale
   if direction == gdk.SCROLL_UP {
     c.Scale *= 1.1
-  } else if direction gdk.SCROLL_DOWN {
+  } else if direction == gdk.SCROLL_DOWN {
     c.Scale /= 1.1
   }
 

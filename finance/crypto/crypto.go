@@ -7,6 +7,7 @@ import (
     "github.com/gotk3/gotk3/gtk"
     "github.com/gotk3/gotk3/gdk"
     "github.com/gotk3/gotk3/cairo"
+    "gogtk/chart/scatter"
 )
 
 type Point struct {
