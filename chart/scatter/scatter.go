@@ -24,7 +24,7 @@ type Scatter struct {
   ClickedPoint    *Point
 }
 
-func NewCart(points []Point) *Scatter {
+func NewChart(points []Point) *Scatter {
   return &Scatter{
     Points: points,
     Scale: 1.0,
