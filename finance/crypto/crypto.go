@@ -12,12 +12,21 @@ import (
 type Point struct {
     X, Y float64
 }
+type Square struct {
+    X, Y float64
+}
 
 var points []Point
+var squares []Square
 var scale float64 = 1.0
 var offsetX, offsetY float64 = 0.0, 0.0
 var dragging bool = false
 var lastX, lastY float64
+var hoveredPoint *Point
+var hoveredSquare *Square
+
+var clickedSquare *Square
+var clickedPoint *Point
 
 func CryptoPage() (*gtk.Box, error) {
     box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -70,9 +79,28 @@ func drawScatterPlot(da *gtk.DrawingArea, cr *cairo.Context) {
 
     // Draw scatter points
     cr.SetSourceRGB(1, 0, 0)
+    size := 50.0
     for _, p := range points {
-        cr.Arc(p.X*(width-80), p.Y*(height-80), 10/scale, 0, 2*math.Pi)
-        cr.Fill()
+      x := p.X * (width-80)
+      y := p.Y * (height-80)
+      if hoveredPoint != nil && p == *hoveredPoint {
+        cr.SetSourceRGB(0,1,0)
+      } else {
+        cr.SetSourceRGB(1,0,0)
+      }
+      cr.Arc(x, y, 10/scale, 0, 2*math.Pi)
+      cr.Fill()
+    }
+    for _, s := range squares {
+      x := s.X * (width-80)
+      y := s.Y * (height-80)
+      if hoveredSquare != nil && s == *hoveredSquare {
+        cr.SetSourceRGB(0,1,0)
+      } else {
+        cr.SetSourceRGB(1,0,0)
+      }
+      cr.Rectangle(x, y, size, size)
+      cr.Fill()
     }
 
     cr.Restore()
@@ -119,21 +147,72 @@ func onMousePress(da *gtk.DrawingArea, event *gdk.Event) {
     if buttonEvent.Button() == gdk.BUTTON_PRIMARY {
         dragging = true
         lastX, lastY = buttonEvent.MotionVal()
+
+        x := (buttonEvent.X() - 40 - offsetX) / scale
+        y := (float64(da.GetAllocatedHeight()) - buttonEvent.Y() - 40 - offsetY) / scale
+
+        // Check if a point is clicked
+        for _, p := range points {
+          px := p.X * (float64(da.GetAllocatedWidth()) - 80)
+          py := p.Y * (float64(da.GetAllocatedHeight()) - 80)
+          if math.Hypot(px-x, py-y) <= 10/scale {
+            clickedPoint = &p
+            squares = append(squares, Square{X: p.X, Y: p.Y})
+            da.QueueDraw()
+            return
+          }
+        }
+        // Check if a point is clicked
+        for _, s := range squares {
+          px := s.X * (float64(da.GetAllocatedWidth()) - 80)
+          py := s.Y * (float64(da.GetAllocatedHeight()) - 80)
+          if math.Hypot(px-x, py-y) <= 10/scale {
+            clickedSquare = &s
+            da.QueueDraw()
+            return
+          }
+        }
+
     }
 }
 
 func onMouseMove(da *gtk.DrawingArea, event *gdk.Event) {
-    if dragging {
-        motionEvent := gdk.EventMotionNewFromEvent(event)
-        x, y := motionEvent.MotionVal()
-        dx := x - lastX
-        dy := y - lastY
-        offsetX += dx
-        offsetY -= dy  // Invert the Y-axis movement
-        lastX, lastY = x, y
+  motionEvent := gdk.EventMotionNewFromEvent(event)
+  x, y := motionEvent.MotionVal()
+  if dragging {
+      dx := x - lastX
+      dy := y - lastY
+      offsetX += dx
+      offsetY -= dy  // Invert the Y-axis movement
+      lastX, lastY = x, y
 
+      da.QueueDraw()
+  } else {
+    // Check if a point is hovered
+    hx := (x - 40 - offsetX) / scale
+    hy := (float64(da.GetAllocatedHeight()) - y - 40 - offsetY) / scale
+    for _, p := range points {
+      px := p.X * (float64(da.GetAllocatedWidth()) - 80)
+      py := p.Y * (float64(da.GetAllocatedHeight()) - 80)
+      if math.Hypot(px-hx, py-hy) <= 10/scale {
+        hoveredPoint = &p
         da.QueueDraw()
+        return
+      }
     }
+    for _, s := range squares {
+      px := s.X * (float64(da.GetAllocatedWidth()) - 80)
+      py := s.Y * (float64(da.GetAllocatedHeight()) - 80)
+      if math.Hypot(px-hx, py-hy) <= 50/scale {
+        hoveredSquare = &s
+        da.QueueDraw()
+        return
+      }
+    }
+    hoveredPoint = nil
+    hoveredSquare = nil
+    da.QueueDraw()
+  }
 }
 
 func onMouseRelease(da *gtk.DrawingArea, event *gdk.Event) {
