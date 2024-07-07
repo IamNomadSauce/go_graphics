@@ -42,12 +42,6 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     cr.SetSourceRGB(0, 0, 0)
     cr.Paint()
 
-    // Apply Transformations
-    cr.Save()
-    cr.Translate(40, height-40)
-    cr.Scale(c.Scale, -c.Scale)
-    cr.Translate(c.OffsetX/c.Scale, c.OffsetY/c.Scale)
-
     // Calculate price and time ranges
     minTime := c.Candles[0].Time
     maxTime := c.Candles[len(c.Candles)-1].Time
@@ -70,7 +64,11 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     }
     priceScale := (height - 80) / priceRange
 
-    fmt.Printf("timeScale=%.2f, priceScale=%.2f\n", timeScale, priceScale)
+    // Apply Transformations
+    cr.Save()
+    cr.Translate(40, height-40)
+    cr.Scale(c.Scale, -c.Scale)
+    cr.Translate(c.OffsetX/c.Scale, c.OffsetY/c.Scale)
 
     // Draw candlesticks
     candleWidth := timeScale * 0.8 // 80% of the time slot
@@ -83,9 +81,6 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
         yClose := (candle.Close - minPrice) * priceScale
         yHigh := (candle.High - minPrice) * priceScale
         yLow := (candle.Low - minPrice) * priceScale
-
-        fmt.Printf("Candle: x=%.2f, yOpen=%.2f, yClose=%.2f, width=%.2f\n", x, yOpen, yClose, candleWidth)
-
 
         // Draw candle wick
         cr.SetSourceRGB(1, 1, 1) // White for the wick
@@ -118,11 +113,17 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     // Axis Labels setup
     cr.SetFontSize(12)
 
+    // Calculate visible range
+    visibleMinTime := minTime + int64((-c.OffsetX / c.Scale) / timeScale)
+    visibleMaxTime := minTime + int64(((width - 80) / c.Scale - c.OffsetX / c.Scale) / timeScale)
+    visibleMinPrice := minPrice + (-c.OffsetY / c.Scale) / priceScale
+    visibleMaxPrice := minPrice + ((height - 80) / c.Scale - c.OffsetY / c.Scale) / priceScale
+
     // X Axis Labels (Time)
     for i := 0; i <= 10; i++ {
         x := 40 + (width-80) * float64(i)/10
         y := height - 30
-        time := minTime + int64(timeRange*float64(i)/10)
+        time := visibleMinTime + int64(float64(visibleMaxTime-visibleMinTime)*float64(i)/10)
         label := fmt.Sprintf("%d", time)
         cr.MoveTo(x, y)
         cr.ShowText(label)
@@ -132,13 +133,12 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     for i := 0; i <= 10; i++ {
         x := 10
         y := height - 40 - (height-80)*float64(i)/10
-        price := minPrice + priceRange*float64(i)/10
+        price := visibleMinPrice + (visibleMaxPrice-visibleMinPrice)*float64(i)/10
         label := fmt.Sprintf("%.2f", price)
         cr.MoveTo(float64(x), y)
         cr.ShowText(label)
     }
 }
-
 
 
 
@@ -227,5 +227,3 @@ func (c *Candlestick) OnScroll(da *gtk.DrawingArea, event *gdk.Event) {
 
   da.QueueDraw()
 }
-
-
