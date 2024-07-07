@@ -4,7 +4,7 @@ import (
   "fmt"
   "math"
   "github.com/gotk3/gotk3/gtk"
-  _"github.com/gotk3/gotk3/gdk"
+  "github.com/gotk3/gotk3/gdk"
   "github.com/gotk3/gotk3/cairo"
   
 )
@@ -22,6 +22,10 @@ type Candlestick struct {
     Scale   float64
     OffsetX float64
     OffsetY float64
+    Dragging bool
+    LastX, LastY float64
+    HoveredCandle *Candle
+    ClickedCandle *Candle
     // Config, candle colors, linetools, etc
 }
 func NewCandlestick(candles []Candle) *Candlestick {
@@ -55,17 +59,40 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     }
 
     // Calculate scaling factors
-    timeScale := (width - 80) / float64(maxTime - minTime)
-    priceScale := (height - 80) / (maxPrice - minPrice)
+    timeRange := float64(maxTime - minTime)
+    if timeRange == 0 {
+        timeRange = 1 // Prevent division by zero
+    }
+    timeScale := (width - 80) / timeRange
+    priceRange := maxPrice - minPrice
+    if priceRange == 0 {
+        priceRange = 1 // Prevent division by zero
+    }
+    priceScale := (height - 80) / priceRange
+
+    fmt.Printf("timeScale=%.2f, priceScale=%.2f\n", timeScale, priceScale)
 
     // Draw candlesticks
-    candleWidth := timeScale * 0.95 // 80% of the time slot
+    candleWidth := timeScale * 0.8 // 80% of the time slot
+    if candleWidth < 1 {
+        candleWidth = 10 / c.Scale // Ensure a minimum width for visibility
+    }
     for _, candle := range c.Candles {
         x := float64(candle.Time-minTime) * timeScale
         yOpen := (candle.Open - minPrice) * priceScale
         yClose := (candle.Close - minPrice) * priceScale
         yHigh := (candle.High - minPrice) * priceScale
         yLow := (candle.Low - minPrice) * priceScale
+
+        fmt.Printf("Candle: x=%.2f, yOpen=%.2f, yClose=%.2f, width=%.2f\n", x, yOpen, yClose, candleWidth)
+
+
+        // Draw candle wick
+        cr.SetSourceRGB(1, 1, 1) // White for the wick
+        cr.SetLineWidth(1 / c.Scale)
+        cr.MoveTo(x+candleWidth/2, yLow)
+        cr.LineTo(x+candleWidth/2, yHigh)
+        cr.Stroke()
 
         // Draw candle body
         if candle.Close > candle.Open {
@@ -75,13 +102,6 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
         }
         cr.Rectangle(x, math.Min(yOpen, yClose), candleWidth, math.Abs(yClose-yOpen))
         cr.Fill()
-
-        // Draw candle wick
-        cr.SetSourceRGB(1, 1, 1) // White for the wick
-        cr.SetLineWidth(1 / c.Scale)
-        cr.MoveTo(x+candleWidth/2, yLow)
-        cr.LineTo(x+candleWidth/2, yHigh)
-        cr.Stroke()
     }
 
     cr.Restore()
@@ -102,7 +122,7 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     for i := 0; i <= 10; i++ {
         x := 40 + (width-80) * float64(i)/10
         y := height - 30
-        time := minTime + int64(float64(maxTime-minTime)*float64(i)/10)
+        time := minTime + int64(timeRange*float64(i)/10)
         label := fmt.Sprintf("%d", time)
         cr.MoveTo(x, y)
         cr.ShowText(label)
@@ -112,10 +132,100 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     for i := 0; i <= 10; i++ {
         x := 10
         y := height - 40 - (height-80)*float64(i)/10
-        price := minPrice + (maxPrice-minPrice)*float64(i)/10
+        price := minPrice + priceRange*float64(i)/10
         label := fmt.Sprintf("%.2f", price)
         cr.MoveTo(float64(x), y)
         cr.ShowText(label)
     }
 }
+
+
+
+
+func (c *Candlestick) OnMousePress(da *gtk.DrawingArea, event *gdk.Event) {
+  buttonEvent := gdk.EventButtonNewFromEvent(event)
+  if buttonEvent.Button() == gdk.BUTTON_PRIMARY {
+    c.Dragging = true
+    c.LastX, c.LastY = buttonEvent.MotionVal()
+
+    //x := (buttonEvent.X() - 40 - c.OffsetY) / c.Scale
+    //y := (float64(da.GetAllocatedHeight()) - buttonEvent.Y() - 40 - c.OffsetY) / c.Scale
+
+    // Check if a point is clicked
+    //for _, p := range c.Candles {
+      //px := p.X * (float64(da.GetAllocatedWidth()) - 80)
+      //py := p.Y * (float64(da.GetAllocatedHeight()) - 80)
+      //if math.Hypot(px-x, py-y) <= 10/c.Scale {
+      //  c.ClickedCandle = &p
+      //  da.QueueDraw()
+      //  return
+      //}
+    //}
+  }
+}
+
+func (c *Candlestick) OnMouseMove(da *gtk.DrawingArea, event *gdk.Event) {
+  motionEvent := gdk.EventMotionNewFromEvent(event)
+  x, y := motionEvent.MotionVal()
+  if c.Dragging {
+    dx := x - c.LastX
+    dy := y - c.LastY
+    c.OffsetX += dx
+    c.OffsetY -= dy
+    c.LastX, c.LastY = x, y
+
+    da.QueueDraw()
+  } else {
+    // Check if a point is hovered
+    //hx := (x-40-c.OffsetX) / c.Scale
+    //hy := (float64(da.GetAllocatedHeight()) - y - 40 - c.OffsetY) / c.Scale
+    //for _, p := range c.Candles {
+    //  px := p.X * (float64(da.GetAllocatedWidth())-80)
+    //  py := p.Y * (float64(da.GetAllocatedHeight())-80)
+    //  if math.Hypot(px-hx, py-hy) <= 10/c.Scale {
+    //    c.HoveredCandle = &p
+    //    da.QueueDraw()
+    //    return
+    //  }
+    //}
+    c.HoveredCandle = nil
+    da.QueueDraw()
+  }
+}
+
+func (c *Candlestick) OnMouseRelease(da *gtk.DrawingArea, event *gdk.Event) {
+  buttonEvent := gdk.EventButtonNewFromEvent(event)
+  if buttonEvent.Button() == gdk.BUTTON_PRIMARY {
+    c.Dragging = false
+  }
+}
+
+func (c *Candlestick) OnScroll(da *gtk.DrawingArea, event *gdk.Event) {
+  scrollEvent := gdk.EventScrollNewFromEvent(event) 
+  direction := scrollEvent.Direction()
+
+  height := float64(da.GetAllocatedHeight())
+
+  // Get Mouse position relative to the drawing area
+  x := scrollEvent.X() - 40
+  y := height - scrollEvent.Y() - 40
+
+  // Calculate world coordinates before zooming
+  worldX := (x - c.OffsetX) / c.Scale
+  worldY := (y - c.OffsetY) / c.Scale
+
+  oldScale := c.Scale
+  if direction == gdk.SCROLL_UP {
+    c.Scale *= 1.1
+  } else if direction == gdk.SCROLL_DOWN {
+    c.Scale /= 1.1
+  }
+
+  // Adjust offsets to keep the point under the cursor foxed
+  c.OffsetX += worldX * (oldScale - c.Scale)
+  c.OffsetY += worldY * (oldScale - c.Scale)
+
+  da.QueueDraw()
+}
+
 

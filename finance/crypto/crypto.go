@@ -6,7 +6,7 @@ import (
     "math/rand"
     "time"
     "github.com/gotk3/gotk3/gtk"
-    _"github.com/gotk3/gotk3/gdk"
+    "github.com/gotk3/gotk3/gdk"
     _"github.com/gotk3/gotk3/cairo"
     //"gogtk/chart/scatter"
     //"gogtk/db/mysql"
@@ -33,7 +33,7 @@ func CryptoPage() (*gtk.Box, error) {
 
     drawingArea.SetSizeRequest(400, 300)
 
-    candles := generateTestData(50)
+    candles := generateTestData(100)
 
     chartInstance := candlestick.NewCandlestick(candles)
 
@@ -48,12 +48,12 @@ func CryptoPage() (*gtk.Box, error) {
 
     //chartInstance := scatter.NewChart(points)
 
-    //drawingArea.Connect("draw", chartInstance.Draw)
-    //drawingArea.AddEvents(int(gdk.BUTTON_PRESS_MASK | gdk.POINTER_MOTION_MASK | gdk.BUTTON_RELEASE_MASK | gdk.SCROLL_MASK))
-    //drawingArea.Connect("button-press-event", chartInstance.OnMousePress)
-    //drawingArea.Connect("motion-notify-event", chartInstance.OnMouseMove)
-    //drawingArea.Connect("button-release-event", chartInstance.OnMouseRelease)
-    //drawingArea.Connect("scroll-event", chartInstance.OnScroll)
+    drawingArea.Connect("draw", chartInstance.Draw)
+    drawingArea.AddEvents(int(gdk.BUTTON_PRESS_MASK | gdk.POINTER_MOTION_MASK | gdk.BUTTON_RELEASE_MASK | gdk.SCROLL_MASK))
+    drawingArea.Connect("button-press-event", chartInstance.OnMousePress)
+    drawingArea.Connect("motion-notify-event", chartInstance.OnMouseMove)
+    drawingArea.Connect("button-release-event", chartInstance.OnMouseRelease)
+    drawingArea.Connect("scroll-event", chartInstance.OnScroll)
 
     box.PackStart(drawingArea, true, true, 0)
 
@@ -69,18 +69,18 @@ func generateTestData(count int) []candlestick.Candle {
     open := basePrice + rand.Float64()*10-5
     high := open + rand.Float64()*5
     low := open - rand.Float64()*5
-    close := (open + high + low) / 3
-    volume := rand.Float64() * 1000000
+    cls := (open + high + low) / 3
+    volume := rand.Float64() * 10000
 
     candles[i] = candlestick.Candle{
-      Time: baseTime.AddDate(0,0,i).Unix(),
+      Time:   baseTime.Add(time.Duration(i) * time.Hour * 24).Unix(),
       Open: open,
       High: high,
       Low: low,
-      Close: close,
+      Close: cls,
       Volume: volume,
     }
-    basePrice = close
+    basePrice = cls
   }
   return candles
 }
