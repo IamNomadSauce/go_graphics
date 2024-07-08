@@ -33,7 +33,7 @@ func CryptoPage() (*gtk.Box, error) {
 
     drawingArea.SetSizeRequest(400, 300)
 
-    candles := generateTestData(1000)
+    candles := generateTestData(100)
 
     chartInstance := candlestick.NewCandlestick(candles)
 

@@ -70,33 +70,46 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     cr.Scale(c.Scale, -c.Scale)
     cr.Translate(c.OffsetX/c.Scale, c.OffsetY/c.Scale)
 
-    // Draw candlesticks
-    candleWidth := timeScale * 0.8 // 80% of the time slot
-    if candleWidth < 1 {
+    // Calculate visible range
+    visibleMinTime := minTime + int64((-c.OffsetX / c.Scale) / timeScale)
+    visibleMaxTime := minTime + int64(((width - 80) / c.Scale - c.OffsetX / c.Scale) / timeScale)
+    visibleMinPrice := minPrice + (-c.OffsetY / c.Scale) / priceScale
+    visibleMaxPrice := minPrice + ((height - 80) / c.Scale - c.OffsetY / c.Scale) / priceScale
+
+    // Calculate dynamic candle width
+    var candleWidth float64
+    if len(c.Candles) > 1 {
+        timeDiff := float64(c.Candles[1].Time - c.Candles[0].Time)
+        candleWidth = timeDiff * timeScale * 0.8 // 80% of the time slot
+    } else {
         candleWidth = 10 / c.Scale // Ensure a minimum width for visibility
     }
+
+    // Draw candlesticks
     for _, candle := range c.Candles {
-        x := float64(candle.Time-minTime) * timeScale
-        yOpen := (candle.Open - minPrice) * priceScale
-        yClose := (candle.Close - minPrice) * priceScale
-        yHigh := (candle.High - minPrice) * priceScale
-        yLow := (candle.Low - minPrice) * priceScale
+        if candle.Time >= visibleMinTime && candle.Time <= visibleMaxTime {
+            x := float64(candle.Time-minTime) * timeScale
+            yOpen := (candle.Open - minPrice) * priceScale
+            yClose := (candle.Close - minPrice) * priceScale
+            yHigh := (candle.High - minPrice) * priceScale
+            yLow := (candle.Low - minPrice) * priceScale
 
-        // Draw candle wick
-        cr.SetSourceRGB(1, 1, 1) // White for the wick
-        cr.SetLineWidth(1 / c.Scale)
-        cr.MoveTo(x+candleWidth/2, yLow)
-        cr.LineTo(x+candleWidth/2, yHigh)
-        cr.Stroke()
+            // Draw candle wick
+            cr.SetSourceRGB(1, 1, 1) // White for the wick
+            cr.SetLineWidth(1 / c.Scale)
+            cr.MoveTo(x+candleWidth/2, yLow)
+            cr.LineTo(x+candleWidth/2, yHigh)
+            cr.Stroke()
 
-        // Draw candle body
-        if candle.Close > candle.Open {
-            cr.SetSourceRGB(0, 1, 0) // Green for bullish
-        } else {
-            cr.SetSourceRGB(1, 0, 0) // Red for bearish
+            // Draw candle body
+            if candle.Close > candle.Open {
+                cr.SetSourceRGB(0, 1, 0) // Green for bullish
+            } else {
+                cr.SetSourceRGB(1, 0, 0) // Red for bearish
+            }
+            cr.Rectangle(x, math.Min(yOpen, yClose), candleWidth, math.Abs(yClose-yOpen))
+            cr.Fill()
         }
-        cr.Rectangle(x, math.Min(yOpen, yClose), candleWidth, math.Abs(yClose-yOpen))
-        cr.Fill()
     }
 
     cr.Restore()
@@ -112,12 +125,6 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
 
     // Axis Labels setup
     cr.SetFontSize(12)
-
-    // Calculate visible range
-    visibleMinTime := minTime + int64((-c.OffsetX / c.Scale) / timeScale)
-    visibleMaxTime := minTime + int64(((width - 80) / c.Scale - c.OffsetX / c.Scale) / timeScale)
-    visibleMinPrice := minPrice + (-c.OffsetY / c.Scale) / priceScale
-    visibleMaxPrice := minPrice + ((height - 80) / c.Scale - c.OffsetY / c.Scale) / priceScale
 
     // X Axis Labels (Time)
     for i := 0; i <= 10; i++ {
@@ -139,6 +146,9 @@ func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
         cr.ShowText(label)
     }
 }
+
+
+
 
 
 
