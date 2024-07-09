@@ -20,6 +20,9 @@ type Page struct {
 func main() {
 	startT := time.Now()
 	fmt.Println("Running go_graphics")
+
+
+
 	gtk.Init(nil)
 
 	// Create a new top-level window

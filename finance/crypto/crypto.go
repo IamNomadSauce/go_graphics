@@ -11,6 +11,7 @@ import (
     //"gogtk/chart/scatter"
     //"gogtk/db/mysql"
     "gogtk/chart/candlestick"
+    "gogtk/cbwebsocket"
     
 )
 
@@ -19,6 +20,10 @@ func CryptoPage() (*gtk.Box, error) {
     if err != nil {
         return nil, err
     }
+
+
+    // Start websocket server
+    go cbwebsocket.StartWebSocketClient()
 
     label, err := gtk.LabelNew("CryptoTab")
     if err != nil {
