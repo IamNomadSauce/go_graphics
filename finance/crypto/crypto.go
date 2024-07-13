@@ -1,7 +1,7 @@
 package crypto
 
 import (
-    _"fmt"
+    "fmt"
     _"math"
     "math/rand"
     "time"
@@ -23,7 +23,7 @@ func CryptoPage() (*gtk.Box, error) {
 
 
     // Start websocket server
-    go cbwebsocket.StartWebSocketClient()
+    // go cbwebsocket.StartWebSocketClient()
 
     label, err := gtk.LabelNew("CryptoTab")
     if err != nil {
@@ -60,7 +60,17 @@ func CryptoPage() (*gtk.Box, error) {
     drawingArea.Connect("button-release-event", chartInstance.OnMouseRelease)
     drawingArea.Connect("scroll-event", chartInstance.OnScroll)
 
+
     box.PackStart(drawingArea, true, true, 0)
+
+    handler := func(message string) {
+      fmt.Println("\nTEST\n")
+      gtk.MainIterationDo(false)
+      label.SetText(fmt.Sprintf("\nTEST\n %s", message))
+    }
+
+    go cbwebsocket.StartWebSocketClient(handler) 
+
 
     return box, nil
 }

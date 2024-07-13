@@ -15,6 +15,7 @@ type WebsocketClient struct {
 	Conn       *websocket.Conn
 	ProductIDs []string
 	Channels   []string
+	MessageHandler func(message string)
 }
 
 // NewWebsocketClient creates a new WebSocket client
@@ -70,13 +71,16 @@ func (c *WebsocketClient) Listen() {
 			log.Println("Error reading message:", err)
 			break
 		}
+		if c.MessageHandler != nil {
+			c.MessageHandler(string(message))
+		}
 		log.Printf("\nReceived message: %s\n", message, "\n")
 		// Handle message
 	}
 }
 
 // StartWebSocketClient starts the WebSocket client
-func StartWebSocketClient() {
+func StartWebSocketClient(handler func(message string)) {
   fmt.Println("Starating Websocket Server for Coinbase")
 	client := NewWebsocketClient([]string{"BTC-USD", "XLM-USD"}, "wss://ws-feed.pro.coinbase.com", nil)
 	client.Connect("wss://ws-feed.pro.coinbase.com")
