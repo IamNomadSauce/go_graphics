@@ -79,9 +79,9 @@ func (c *WebsocketClient) Listen() {
 }
 
 // StartWebSocketClient starts the WebSocket client
-func StartWebSocketClient(messageChannel chan string) {
+func StartWebSocketClient(watchlist []string, messageChannel chan string) {
   fmt.Println("Starating Websocket Server for Coinbase")
-	client := NewWebsocketClient([]string{"BTC-USD", "XLM-USD"}, "wss://ws-feed.pro.coinbase.com", nil, messageChannel)
+	client := NewWebsocketClient(watchlist, "wss://ws-feed.pro.coinbase.com", nil, messageChannel)
 	client.Connect("wss://ws-feed.pro.coinbase.com")
 	client.Subscribe()
 	go client.Listen()
