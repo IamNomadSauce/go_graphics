@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"encoding/json"
     "fmt"
     _"math"
     "math/rand"
@@ -15,6 +16,13 @@ import (
     "gogtk/cbwebsocket"
     
 )
+
+type TickerMessage struct {
+	Type string `json:"type"`
+	ProductID string `json:"product_id"`
+	Price string `json:"price"`
+	Time string `json:"Time"`
+}
 
 func CryptoPage() (*gtk.Box, error) {
     box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -54,9 +62,19 @@ func CryptoPage() (*gtk.Box, error) {
 
     go func() {
 	    for message := range messageChannel {
-		    glib.IdleAdd(func() {
-			    label.SetText(fmt.Sprintf("Received: %s", message))
-		    })
+		    var tickerData TickerMessage
+		    err := json.Unmarshal([]byte(message), &tickerData)
+		    if err != nil {
+			    fmt.Println("Error parsing message: %v", err)
+			    continue
+		    }
+		    if tickerData.Type == "ticker" {
+			    glib.IdleAdd(func() {
+				    label.SetText(fmt.Sprintf("Product: %s, Price %s, Time: %s", tickerData.ProductID, tickerData.Price, tickerData.Time))
+
+			    })
+
+		    }
 	    }
     }()
 
