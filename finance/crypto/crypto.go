@@ -7,6 +7,7 @@ import (
     "time"
     "github.com/gotk3/gotk3/gtk"
     "github.com/gotk3/gotk3/gdk"
+    "github.com/gotk3/gotk3/glib"
     _"github.com/gotk3/gotk3/cairo"
     //"gogtk/chart/scatter"
     //"gogtk/db/mysql"
@@ -21,10 +22,6 @@ func CryptoPage() (*gtk.Box, error) {
         return nil, err
     }
 
-
-    // Start websocket server
-    // go cbwebsocket.StartWebSocketClient()
-
     label, err := gtk.LabelNew("CryptoTab")
     if err != nil {
         return nil, err
@@ -37,21 +34,8 @@ func CryptoPage() (*gtk.Box, error) {
     }
 
     drawingArea.SetSizeRequest(400, 300)
-
     candles := generateTestData(100)
-
     chartInstance := candlestick.NewCandlestick(candles)
-
-    drawingArea.Connect("draw", chartInstance.Draw)
-
-
-
-    //points := []scatter.Point{}
-    //for i := 0; i < 100; i++ {
-     // points = append(points, scatter.Point{X: rand.Float64(), Y: rand.Float64()})
-    //}
-
-    //chartInstance := scatter.NewChart(points)
 
     drawingArea.Connect("draw", chartInstance.Draw)
     drawingArea.AddEvents(int(gdk.BUTTON_PRESS_MASK | gdk.POINTER_MOTION_MASK | gdk.BUTTON_RELEASE_MASK | gdk.SCROLL_MASK))
@@ -63,13 +47,18 @@ func CryptoPage() (*gtk.Box, error) {
 
     box.PackStart(drawingArea, true, true, 0)
 
-    handler := func(message string) {
-      fmt.Println("\nTEST\n")
-      gtk.MainIterationDo(false)
-      label.SetText(fmt.Sprintf("\nTEST\n %s", message))
-    }
+    messageChannel := make(chan string)
 
-    go cbwebsocket.StartWebSocketClient(handler) 
+
+    go cbwebsocket.StartWebSocketClient(messageChannel) 
+
+    go func() {
+	    for message := range messageChannel {
+		    glib.IdleAdd(func() {
+			    label.SetText(fmt.Sprintf("Received: %s", message))
+		    })
+	    }
+    }()
 
 
     return box, nil
