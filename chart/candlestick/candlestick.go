@@ -1,11 +1,13 @@
 package candlestick
 
 import (
+	"time"
   "fmt"
   "math"
   "github.com/gotk3/gotk3/gtk"
   "github.com/gotk3/gotk3/gdk"
   "github.com/gotk3/gotk3/cairo"
+  "github.com/gotk3/gotk3/glib"
   
 )
 type Candle struct {
@@ -18,21 +20,72 @@ type Candle struct {
 }
 
 type Candlestick struct {
-    Candles []Candle
-    Scale   float64
-    OffsetX float64
-    OffsetY float64
-    Dragging bool
-    LastX, LastY float64
-    HoveredCandle *Candle
-    ClickedCandle *Candle
-    // Config, candle colors, linetools, etc
+	//Symbol:			string
+	Candles 		[]Candle
+	Scale   		float64
+	OffsetX 		float64
+	OffsetY 		float64
+	Dragging 		bool
+	LastX, LastY 		float64
+	HoveredCandle 		*Candle
+	ClickedCandle 		*Candle
+	priceUpdateChan		chan float64
+	drawingArea		*gtk.DrawingArea
+	// Config, candle colors, linetools, etc
 }
-func NewCandlestick(candles []Candle) *Candlestick {
-    return &Candlestick{
-        Candles: candles,
-        Scale:   1.0,
-    }
+
+func NewCandlestick(candles []Candle, da *gtk.DrawingArea) (*Candlestick, chan float64) {
+	priceUpdateChan := make(chan float64, 100)
+	c := &Candlestick{
+		Candles:		candles,
+		Scale:			1.0,
+		priceUpdateChan:	priceUpdateChan,
+		drawingArea:		da,
+	}
+	go c.handlePriceUpdate()
+	return c, priceUpdateChan
+}
+
+func (c *Candlestick) handlePriceUpdate() {
+	for price := range c.priceUpdateChan {
+		c.updateChart(price)
+	}
+}
+
+func (c *Candlestick) updateChart(price float64) {
+	if len(c.Candles) == 0 {
+		newCandle := Candle{
+			Time: time.Now().Unix(),
+			Open:	price,
+			High:	price,
+			Low:	price,
+			Close:	price,
+			Volume:	0,
+		}
+		c.Candles = append(c.Candles, newCandle)
+	} else {
+		lastCandle := &c.Candles[len(c.Candles)-1]
+		currentTime := time.Now().Unix()
+
+		if currentTime-lastCandle.Time < 60 {
+			lastCandle.Close = price
+			lastCandle.High = math.Max(lastCandle.High, price)
+			lastCandle.Low = math.Min(lastCandle.Low, price)
+		} else {
+			newCandle := Candle{
+				Time:	currentTime,
+				Open:	lastCandle.Close,
+				High:	price,
+				Low:	price,
+				Close:	price,
+				Volume:	0,
+			}
+			c.Candles = append(c.Candles, newCandle)
+		}
+	}
+	glib.IdleAdd(func() {
+		c.drawingArea.QueueDraw()
+	})
 }
 
 func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {

@@ -6,6 +6,7 @@ import (
     "log"
     "math/rand"
     "time"
+    "strconv"
     "github.com/gotk3/gotk3/gtk"
     "github.com/gotk3/gotk3/gdk"
     "github.com/gotk3/gotk3/glib"
@@ -24,6 +25,10 @@ var watchlist = []string{
     "BTC-USD",
     "XLM-USD",
 }
+
+var chartInstance *candlestick.Candlestick
+var priceUpdateChan chan float64
+var CurrentAsset = watchlist[1]
 
 func CryptoPage() (*gtk.Box, error) {
     box, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -78,7 +83,7 @@ func CryptoPage() (*gtk.Box, error) {
 
     drawingArea.SetSizeRequest(400, 300)
     candles := generateTestData(100)
-    chartInstance := candlestick.NewCandlestick(candles)
+    chartInstance, priceUpdateChan = candlestick.NewCandlestick(candles, drawingArea)
 
     drawingArea.Connect("draw", chartInstance.Draw)
     drawingArea.AddEvents(int(gdk.BUTTON_PRESS_MASK | gdk.POINTER_MOTION_MASK | gdk.BUTTON_RELEASE_MASK | gdk.SCROLL_MASK))
@@ -101,11 +106,21 @@ func CryptoPage() (*gtk.Box, error) {
                 log.Printf("Error parsing message: %v", err)
                 continue
             }
+            //if tickerData.Type == "ticker" && tickerData.ProductID == CurrentAsset  {
             if tickerData.Type == "ticker" {
                 glib.IdleAdd(func() {
                     if label, exists := assetLabels[tickerData.ProductID]; exists {
                         label.SetText(fmt.Sprintf("%s: %s", tickerData.ProductID, tickerData.Price))
                     }
+
+		    price, err := strconv.ParseFloat(tickerData.Price, 64)
+		    if err != nil {
+			    fmt.Println("Error parsing price: %v", err)
+			    return
+		    }
+		    if tickerData.ProductID == CurrentAsset  {
+			    priceUpdateChan <- price
+		    }
                 })
             }
         }
@@ -117,7 +132,7 @@ func CryptoPage() (*gtk.Box, error) {
 func generateTestData(count int) []candlestick.Candle {
     candles := make([]candlestick.Candle, count)
     baseTime := time.Now().AddDate(0, 0, -count)
-    basePrice := 100.0
+    basePrice := 0.10
 
     for i := 0; i < count; i++ {
         open := basePrice + rand.Float64()*10 - 5
