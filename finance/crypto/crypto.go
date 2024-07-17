@@ -12,6 +12,7 @@ import (
     "github.com/gotk3/gotk3/glib"
     "gogtk/chart/candlestick"
     "gogtk/cbwebsocket"
+    //"gogtk/db/postgres"
 )
 
 type TickerMessage struct {
@@ -139,7 +140,7 @@ func generateTestData(count int) []candlestick.Candle {
         high := open + rand.Float64()*5
         low := open - rand.Float64()*5
         cls := (open + high + low) / 3
-        volume := rand.Float64() * 10000
+        //volume := rand.Float64() * 10000
 
         candles[i] = candlestick.Candle{
             Time:   baseTime.Add(time.Duration(i) * time.Hour * 24).Unix(),
@@ -147,7 +148,7 @@ func generateTestData(count int) []candlestick.Candle {
             High:   high,
             Low:    low,
             Close:  cls,
-            Volume: volume,
+            //Volume: volume,
         }
         basePrice = cls
     }
