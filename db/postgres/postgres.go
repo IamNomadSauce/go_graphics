@@ -5,17 +5,27 @@ import (
     "fmt"
     "log"
     _ "github.com/lib/pq"
+    "os"
 )
 
 const (
-    host     = "localhost"
-    port     = 31337
-    user     = "postgres"
-    password = "1234567" // Replace with actual password
-    dbname   = "myapp_db"
+    host     = os.Getenv("pg_host")
+    port     = os.Getenv("pg_port")
+    user     = os.Getenv("pg_user")
+    password = os.Getenv("pg_pass") 
+    dbname   = os.Getenv("pg_dbname")
 )
 
+type Candle struct {
+	Time: int64	
+	Open: float64
+	High: float64
+	Low: float64
+	Close: float64
+	Volume: float64
+}
 func createDatabase() error {
+
     psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
         host, port, user, password)
     
@@ -57,71 +67,125 @@ func connectDB() (*sql.DB, error) {
     return db, nil
 }
 
-func createTables(db *sql.DB) error {
-    // Create account table
-    _, err := db.Exec(`
-        CREATE TABLE IF NOT EXISTS account (
-            id SERIAL PRIMARY KEY,
-            username VARCHAR(50) UNIQUE NOT NULL,
-            password VARCHAR(100) NOT NULL,
-            email VARCHAR(100) UNIQUE NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `)
-    if err != nil {
-        return fmt.Errorf("error creating account table: %v", err)
-    }
 
-    // Create todo table
-    _, err = db.Exec(`
-        CREATE TABLE IF NOT EXISTS todo (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES account(id),
-            title VARCHAR(100) NOT NULL,
-            description TEXT,
-            completed BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    `)
-    if err != nil {
-        return fmt.Errorf("error creating todo table: %v", err)
-    }
+// -------------------------------
+// Coinbase
+// -------------------------------
 
-    // Create coinbase_btcusd_5m table
-    _, err = db.Exec(`
-        CREATE TABLE IF NOT EXISTS coinbase_btcusd_5m (
-            id SERIAL PRIMARY KEY,
-            timestamp TIMESTAMP NOT NULL,
-            open DECIMAL(10, 2) NOT NULL,
-            high DECIMAL(10, 2) NOT NULL,
-            low DECIMAL(10, 2) NOT NULL,
-            close DECIMAL(10, 2) NOT NULL,
-            volume DECIMAL(14, 6) NOT NULL
-        )
-    `)
-    if err != nil {
-        return fmt.Errorf("error creating coinbase_btcusd_5m table: %v", err)
-    }
+// WriteCBCandles
+func writeCandles(candles []Candle, exchange string, raw_symbol string, tf Timeframe) error {
+    symbol := strings.ReplaceAll(raw_symbol, "-", "")
+    psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+        host, port, user, password, dbname)
 
-    fmt.Println("All tables created successfully")
-    return nil
-}
-
-func main() {
-    err := createDatabase()
+    db, err := sql.Open("postgres", psqlInfo)
     if err != nil {
-        log.Fatal("Error creating database:", err)
-    }
-
-    db, err := connectDB()
-    if err != nil {
-        log.Fatal("Error connecting to the database:", err)
+        return fmt.Errorf("failed to open database: %w", err)
     }
     defer db.Close()
 
-    err = createTables(db)
+    createTableQuery := fmt.Sprintf(`CREATE TABLE IF NOT EXISTS %s_%s_%d (
+        time BIGINT NOT NULL PRIMARY KEY,
+        open FLOAT NOT NULL,
+        high FLOAT NOT NULL,
+        low FLOAT NOT NULL,
+        close FLOAT NOT NULL,
+        volume FLOAT NOT NULL
+    )`, exchange, symbol, tf.Tf)
+
+    _, err = db.Exec(createTableQuery)
     if err != nil {
-        log.Fatal("Error creating tables:", err)
+        return fmt.Errorf("failed to create table: %w", err)
     }
+
+    insertQuery := fmt.Sprintf(`
+    INSERT INTO %s_%s_%d (time, open, high, low, close, volume)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    ON CONFLICT (time) DO UPDATE SET
+        open = EXCLUDED.open,
+        high = EXCLUDED.high,
+        low = EXCLUDED.low,
+        close = EXCLUDED.close,
+        volume = EXCLUDED.volume
+    `, exchange, symbol, tf.Tf)
+
+    for _, candle := range candles {
+        _, err = db.Exec(insertQuery, candle.Time, candle.Open, candle.High, candle.Low, candle.Close, candle.Volume)
+        if err != nil {
+            return fmt.Errorf("failed to insert candle: %w", err)
+        }
+    }
+
+    return nil
 }
+
+// GetCBCandles
+func getCandles(exchange string, symbol string, tf Timeframe, limit int) ([]Candle, error) {
+    // Replace any non-alphanumeric characters in the symbol with underscores
+    safeSymbol := strings.Map(func(r rune) rune {
+        if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+            return r
+        }
+        return '_'
+    }, symbol)
+
+    tableName := fmt.Sprintf("%s_%s_%d", exchange, safeSymbol, tf.Tf)
+
+    psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+        host, port, user, password, dbname)
+
+    db, err := sql.Open("postgres", psqlInfo)
+    if err != nil {
+        return nil, fmt.Errorf("failed to open database: %w", err)
+    }
+    defer db.Close()
+
+    query := fmt.Sprintf(`
+        SELECT time, open, high, low, close, volume
+        FROM %s
+        ORDER BY time DESC
+        LIMIT $1
+    `, tableName)
+
+    rows, err := db.Query(query, limit)
+    if err != nil {
+        return nil, fmt.Errorf("failed to execute query: %w", err)
+    }
+    defer rows.Close()
+
+    var candles []Candle
+    for rows.Next() {
+        var c Candle
+        err := rows.Scan(&c.Time, &c.Open, &c.High, &c.Low, &c.Close, &c.Volume)
+        if err != nil {
+            return nil, fmt.Errorf("failed to scan row: %w", err)
+        }
+        candles = append(candles, c)
+    }
+
+    if err = rows.Err(); err != nil {
+        return nil, fmt.Errorf("error iterating rows: %w", err)
+    }
+
+    // Reverse the slice to get ascending order by time
+    for i, j := 0, len(candles)-1; i < j; i, j = i+1, j-1 {
+        candles[i], candles[j] = candles[j], candles[i]
+    }
+
+    return candles, nil
+}
+
+
+// To be done later...
+// --------------------
+// get portfolio
+
+// get fills
+
+
+
+
+
+
+
 
