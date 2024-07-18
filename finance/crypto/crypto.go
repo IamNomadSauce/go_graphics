@@ -12,6 +12,7 @@ import (
     "github.com/gotk3/gotk3/glib"
     "gogtk/chart/candlestick"
     "gogtk/cbwebsocket"
+    _"gogtk/server/coinbase"
     //"gogtk/db/postgres"
 )
 

@@ -3,6 +3,11 @@ package coinbase
 import (
 	"fmt"
 	"time"
+	"sync"
+	"os"
+	"strconv"
+	"net/http"
+	"encoding/json"
 	_"github.com/joho/godotenv"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -21,6 +26,15 @@ type Candle struct {
 	Volume float64	`json:"volume"`
 }
 
+type CoinbaseCandle struct {
+	Time   string `json:"start"`
+	Open   string `json:"open"`
+	High   string `json:"high"`
+	Low    string `json:"low"`
+	Close  string `json:"close"`
+	Volume string `json:"volume"`
+}
+
 type Timeframe struct {
 	Label 	string
 	Xch	string
@@ -35,7 +49,7 @@ type CandlesData struct {
 
 
 type ApiResponse struct {
-	Candles []Candle `json:"candles"`
+	Candles []CoinbaseCandle `json:"candles"`
 }
 
 func doCoinbase(full bool) {
@@ -45,23 +59,23 @@ func doCoinbase(full bool) {
 	cbSecret := os.Getenv("CBAPISECRET")
 
 	//
-	accounts, folio_val := getCBAccts()
-	writeAccountsToDB(accounts, "coinbase")
-	cb_AddFolioVal(folio_val)
+	//accounts, folio_val := getCBAccts()
+	//writeAccountsToDB(accounts, "coinbase")
+	//cb_AddFolioVal(folio_val)
 
-	orders := getCBOrders()
+	//orders := getCBOrders()
 	// for order := range orders {
 	// 	fmt.Println("Order", orders[order])
 	// }
-	cb_WriteOrders(orders)
+	//cb_WriteOrders(orders)
 
-	fills := getCBFills()
+	//fills := getCBFills()
 
 	// for fill := range fills {
 	// 	fmt.Println("Fills", fills[fill].ProductID, fills[fill].Size, fills[fill].Price)
 	// }
 
-	cb_WriteFills(fills)
+	//cb_WriteFills(fills)
 	// fmt.Println("ENVIRONMENT VARIABLE", cbKey, cbSecret)
 
 	type ExchangeSchema struct {
@@ -152,7 +166,7 @@ func doCoinbase(full bool) {
 		wg.Add(1)
 		go func(d CandlesData) {
 			defer wg.Done()
-			writeCandles(d.Candles, "coinbase", d.Symbol, d.TF)
+			//writeCandles(d.Candles, "coinbase", d.Symbol, d.TF)
 		}(data)
 	}
 
@@ -166,6 +180,14 @@ func doCoinbase(full bool) {
 	fmt.Println("DURATION", duration)
 }
 
+func getCBSign(apiSecret string, timestamp int64, method string, path string, body string) string {
+	message := fmt.Sprintf("%d%s%s%s", timestamp, method, path, body)
+	hasher := hmac.New(sha256.New, []byte(apiSecret))
+	hasher.Write([]byte(message))
+	signature := hex.EncodeToString(hasher.Sum(nil))
+	return signature
+}
+
 func doCBRequest(symbol string, tf Timeframe, apiKey string, apiSecret string, full bool) []Candle {
 	numCandles := 300
 	totalDuration := time.Duration(tf.Tf*numCandles) * time.Minute
@@ -174,7 +196,7 @@ func doCBRequest(symbol string, tf Timeframe, apiKey string, apiSecret string, f
 
 	var candles []Candle
 	if full {
-		candles = getFullCBCandlesAuth(apiKey, apiSecret, symbol, tf.Tf, tf.Xch, startTime, endTime.Unix())
+		//candles = getFullCBCandlesAuth(apiKey, apiSecret, symbol, tf.Tf, tf.Xch, startTime, endTime.Unix())
 	} else {
 		candles = getCBCandlesAuth(apiKey, apiSecret, symbol, tf.Tf, tf.Xch, startTime, endTime.Unix())
 	}
@@ -270,3 +292,8 @@ func getCBCandlesAuth(apiKey string, apiSecret string, symbol string, tf int, tf
 
 	return candles
 }
+
+
+
+
+
