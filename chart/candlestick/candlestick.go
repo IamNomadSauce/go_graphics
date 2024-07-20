@@ -88,6 +88,16 @@ func (c *Candlestick) updateChart(price float64) {
 	})
 }
 
+func (c *Candlestick) UpdateCandles(newCandles []Candle) {
+	c.Candles  = newCandles
+	c.OffsetX = 0
+	c.OffsetY = 0
+	c.Scale = 1.0
+	glib.IdleAdd(func() {
+		c.drawingArea.QueueDraw()
+	})
+}
+
 func (c *Candlestick) Draw(da *gtk.DrawingArea, cr *cairo.Context) {
     width := float64(da.GetAllocatedWidth())
     height := float64(da.GetAllocatedHeight())

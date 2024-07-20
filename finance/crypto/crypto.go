@@ -42,13 +42,47 @@ func CryptoPage() (*gtk.Box, error) {
     if err != nil {
         return nil, err
     }
+
+
+    //toolBar, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+
     box.PackStart(label, false, false, 0)
+
+    // ----------------------------------------
+    // Watchlist/toolbar box TODO rename watchlistbox to toolbarbox
+    // ----------------------------------------
 
     watchlistBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10) // 10 pixels spacing
     if err != nil {
         return nil, err
     }
 
+    // Buttons
+    buttonBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 10)
+    if err != nil {
+	    return nil, err
+    }
+    getCandlesBtn, err := gtk.ButtonNewWithLabel("Get Candles")
+    if err != nil {
+	    return nil, err
+    }
+
+    getCandlesBtn.Connect("clicked", func() {
+	    fmt.Println("GetCandles Clicked")
+	    newCandles := generateTestData(1000)
+	    chartInstance.UpdateCandles(newCandles)
+    })
+
+    buttonBox.PackStart(getCandlesBtn, false, false, 0)
+
+
+    websocketLabel, err := gtk.LabelNew("WebSockets: ");
+    if err != nil {
+	    return nil, err
+    }
+
+    watchlistBox.PackStart(buttonBox, false, false, 0)
+    watchlistBox.PackStart(websocketLabel, false, false, 0)
     // Create a map to store labels for each asset
     assetLabels := make(map[string]*gtk.Label)
 
@@ -84,7 +118,7 @@ func CryptoPage() (*gtk.Box, error) {
     }
 
     drawingArea.SetSizeRequest(400, 300)
-    candles := generateTestData(100)
+    candles := generateTestData(1000)
     chartInstance, priceUpdateChan = candlestick.NewCandlestick(candles, drawingArea)
 
     drawingArea.Connect("draw", chartInstance.Draw)
