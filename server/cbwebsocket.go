@@ -76,7 +76,7 @@ func (c *WebsocketClient) Listen() {
       c.MessageHandler(string(message))
     }
     c.MessageHandler(string(message))
-		log.Printf("\nReceived message: %s\n", message, "\n")
+		//log.Printf("\nReceived message: %s\n", message, "\n")
 		// Handle message
 	}
 }

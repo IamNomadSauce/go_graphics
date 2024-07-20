@@ -73,7 +73,7 @@ func (c *WebsocketClient) Listen() {
 			break
 		}
 
-		log.Printf("\nReceived message: %s\n", message, "\n")
+		//log.Printf("\nReceived message: %s\n", message, "\n")
 		c.MessageChannel <- string(message)
 	}
 }

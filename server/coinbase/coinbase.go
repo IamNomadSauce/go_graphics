@@ -52,7 +52,7 @@ type ApiResponse struct {
 	Candles []CoinbaseCandle `json:"candles"`
 }
 
-func doCoinbase(full bool) {
+func DoCoinbase(full bool) {
 	fmt.Println("=======================================")
 	fmt.Println("\n", "Do Coinbase")
 	cbKey := os.Getenv("CBAPIKEY")
@@ -91,14 +91,14 @@ func doCoinbase(full bool) {
 		}{
 			Watchlist: []string{
 				"BTC-USD",
-				"XRP-USD",
-				"ETH-USD",
-				"XLM-USD",
-				"LTC-USD",
-				"SOL-USD",
-				"ADA-USD",
-				"DOGE-USD",
-				"SHIB-USD",
+				//"XRP-USD",
+				//"ETH-USD",
+				//"XLM-USD",
+				////"LTC-USD",
+				//"SOL-USD",
+				//"ADA-USD",
+				//"DOGE-USD",
+				//"SHIB-USD",
 			},
 			TF: []Timeframe{
 				{
@@ -181,14 +181,19 @@ func doCoinbase(full bool) {
 }
 
 func getCBSign(apiSecret string, timestamp int64, method string, path string, body string) string {
+	fmt.Println("\n-------------------------\n getCBSign \n-------------------------\n")
+	fmt.Println("API:", apiSecret)
 	message := fmt.Sprintf("%d%s%s%s", timestamp, method, path, body)
+	fmt.Println("Message\n", message)
 	hasher := hmac.New(sha256.New, []byte(apiSecret))
 	hasher.Write([]byte(message))
 	signature := hex.EncodeToString(hasher.Sum(nil))
+	fmt.Println("Signature\n", signature)
 	return signature
 }
 
 func doCBRequest(symbol string, tf Timeframe, apiKey string, apiSecret string, full bool) []Candle {
+	fmt.Println("\n-------------------------\n doCBRequest \n-------------------------\n")
 	numCandles := 300
 	totalDuration := time.Duration(tf.Tf*numCandles) * time.Minute
 	endTime := time.Now()
@@ -206,7 +211,8 @@ func doCBRequest(symbol string, tf Timeframe, apiKey string, apiSecret string, f
 
 
 func getCBCandlesAuth(apiKey string, apiSecret string, symbol string, tf int, tflbl string, start int64, end int64) []Candle {
-	// fmt.Println("AUTH Coinbase Candles", symbol, tf, start, end)
+	fmt.Println("\n-------------------------\n getCBCandlesAuth \n", symbol, tf, "\n-------------------------\n")
+	fmt.Println("AUTH Coinbase Candles", symbol, tf, start, end)
 
 	timestamp := time.Now().Unix()
 	path := fmt.Sprintf("/api/v3/brokerage/products/%s/candles", symbol)

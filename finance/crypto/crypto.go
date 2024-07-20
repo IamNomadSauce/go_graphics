@@ -12,7 +12,7 @@ import (
     "github.com/gotk3/gotk3/glib"
     "gogtk/chart/candlestick"
     "gogtk/cbwebsocket"
-    _"gogtk/server/coinbase"
+    "gogtk/server/coinbase"
     //"gogtk/db/postgres"
 )
 
@@ -69,8 +69,9 @@ func CryptoPage() (*gtk.Box, error) {
 
     getCandlesBtn.Connect("clicked", func() {
 	    fmt.Println("GetCandles Clicked")
-	    newCandles := generateTestData(1000)
-	    chartInstance.UpdateCandles(newCandles)
+	    coinbase.DoCoinbase(false)
+	    //newCandles := generateTestData(100)
+	    //chartInstance.UpdateCandles(newCandles)
     })
 
     buttonBox.PackStart(getCandlesBtn, false, false, 0)
@@ -118,7 +119,7 @@ func CryptoPage() (*gtk.Box, error) {
     }
 
     drawingArea.SetSizeRequest(400, 300)
-    candles := generateTestData(1000)
+    candles := generateTestData(100)
     chartInstance, priceUpdateChan = candlestick.NewCandlestick(candles, drawingArea)
 
     drawingArea.Connect("draw", chartInstance.Draw)
