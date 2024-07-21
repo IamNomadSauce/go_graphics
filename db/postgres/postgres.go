@@ -3,34 +3,56 @@ package postgres
 import (
     "database/sql"
     "fmt"
-    "log"
     _ "github.com/lib/pq"
     "os"
+    "github.com/joho/godotenv"
+    "strings"
 )
 
-const (
-    host     = os.Getenv("pg_host")
-    port     = os.Getenv("pg_port")
-    user     = os.Getenv("pg_user")
-    password = os.Getenv("pg_pass") 
-    dbname   = os.Getenv("pg_dbname")
-)
+
 
 type Candle struct {
-	Time: int64	
-	Open: float64
-	High: float64
-	Low: float64
-	Close: float64
-	Volume: float64
+	Time int64	
+	Open float64
+	High float64
+	Low float64
+	Close float64
+	Volume float64
 }
-func createDatabase() error {
+
+type Timeframe struct {
+	Label 	string
+	Xch 	string
+	Tf	int
+}
+
+var host string
+var port string
+var user string
+var password string
+var dbname string
+
+func CreateDatabase() error {
+	fmt.Println("\n------------------------------\n Create Postgres Database \n------------------------------\n")
+	
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
+	host     := os.Getenv("PG_HOST")
+	port     := os.Getenv("PG_PORT")
+	user     := os.Getenv("PG_USER")
+	password := os.Getenv("PG_PASS") 
+	dbname   := os.Getenv("PG_DBNAME")
 
     psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
         host, port, user, password)
+
+	fmt.Printf("host: %s\n port: %s\n user: %s\n password: %s\n dbname: %s\n", host, port, user, password, dbname)
     
     db, err := sql.Open("postgres", psqlInfo)
     if err != nil {
+	    fmt.Println("Error opening Postgres", err)
         return err
     }
     defer db.Close()

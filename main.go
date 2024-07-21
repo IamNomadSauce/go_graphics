@@ -7,6 +7,7 @@ import (
   "gogtk/finance"
 	"time"
 
+	"gogtk/db/postgres"
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -20,6 +21,8 @@ type Page struct {
 func main() {
 	startT := time.Now()
 	fmt.Println("Running go_graphics")
+
+	postgres.CreateDatabase()
 
 
 
