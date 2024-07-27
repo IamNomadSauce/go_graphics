@@ -33,6 +33,18 @@ func main() {
 		fmt.Errorf("Error showing databases: %v", err)
 	}
 
+	err = postgres.CreateTables(db)
+	if err != nil {
+		fmt.Errorf("Error Creating Tables %v", err)
+	}
+
+	err = postgres.ListTables(db)
+	if err != nil {
+		fmt.Errorf("Error listing tables: %v", err)
+	}
+
+	// ------------------------------------------------------
+
 	gtk.Init(nil)
 
 	// Create a new top-level window

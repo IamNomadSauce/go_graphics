@@ -50,7 +50,7 @@ func CreateDatabase() (*sql.DB, error) {
     dbname = os.Getenv("PG_DBNAME")
 
     // Connect to the default 'postgres' database to check for the existence of the target database
-    psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
+    psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
 
     db, err := sql.Open("postgres", psqlInfo)
     if err != nil {
@@ -127,6 +127,18 @@ func CreateTables(db *sql.DB) error {
 	fmt.Println("Create Tables")
 
 	_, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS projects (
+			id SERIAL PRIMARY KEY,
+			title VARCHAR(100) NOT NULL,
+			description TEXT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("Error creating Projects table")
+	}
+
+	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS todos (
 			id SERIAL PRIMARY KEY,
 			project_id INTEGER REFERENCES projects(id),
@@ -140,21 +152,28 @@ func CreateTables(db *sql.DB) error {
 		return fmt.Errorf("Error creating TODOs table")
 	}
 
-	_, err = db.Exec(`
-		CREATE TABLE IF NOT EXISTS projects (
-			id SERIAL PRIMARY KEY,
-			title VARCHAR(100) NOT NULL,
-			description TEXT,
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		)
-	`)
-	if err != nil {
-		return fmt.Errorf("Error creating Projects table")
-	}
-
 	fmt.Println("All Tables Created Successfully")
 
 	return nil
 }
 
+func ListTables(db *sql.DB) error {
+	fmt.Println("Listing all tables")
+	rows, err := db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+	if err != nil {
+		fmt.Println("Error listing tables", err)
+		return err
+	}
+	defer rows.Close()
 
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil{
+			fmt.Println("Error scanning table name", err)
+			return err
+		}
+		fmt.Println(" -", tableName)
+	}
+
+	return nil
+}
