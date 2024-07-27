@@ -81,14 +81,18 @@ func CreateDatabase() error {
     }
 
     fmt.Printf("Database %s created successfully\n", dbname)
+
+    err = CreateTables(db)
+    if err != nil {
+	    return fmt.Errorf("Error creating tables")
+    }
     return nil
 }
 
 func CreateTables(db *sql.DB) error {
 	fmt.Println("Create Tables")
 
-	_, err = db.Exec(`
-
+	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS todos (
 			id SERIAL PRIMARY KEY,
 			project_id INTEGER REFERENCES projects(id),
@@ -99,11 +103,10 @@ func CreateTables(db *sql.DB) error {
 		)
 	`)
 	if err != nil {
-		return fmt.Println("Error creating TODOs table")
+		return fmt.Errorf("Error creating TODOs table")
 	}
 
 	_, err = db.Exec(`
-
 		CREATE TABLE IF NOT EXISTS projects (
 			id SERIAL PRIMARY KEY,
 			title VARCHAR(100) NOT NULL,
@@ -112,8 +115,12 @@ func CreateTables(db *sql.DB) error {
 		)
 	`)
 	if err != nil {
-		return fmt.Println("Error creating TODOs table")
+		return fmt.Errorf("Error creating Projects table")
 	}
+
+	fmt.Println("All Tables Created Successfully")
+
+	return nil
 }
 
 
