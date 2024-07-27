@@ -22,9 +22,16 @@ func main() {
 	startT := time.Now()
 	fmt.Println("Running go_graphics")
 
-	postgres.CreateDatabase()
-
-
+	db, err := postgres.CreateDatabase()
+	if err != nil {
+		fmt.Println("Error Retrieving Database", err)
+	}
+	defer db.Close()
+	
+	err = postgres.ShowDatabases(db)
+	if err != nil {
+		fmt.Errorf("Error showing databases: %v", err)
+	}
 
 	gtk.Init(nil)
 

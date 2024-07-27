@@ -30,20 +30,20 @@ var user string
 var password string
 var dbname string
 
-func CreateDatabase() error {
+func CreateDatabase() (*sql.DB, error) {
     fmt.Println("\n------------------------------\n Create Postgres Database \n------------------------------\n")
 
     err := godotenv.Load()
     if err != nil {
         fmt.Println("Error loading .env file")
-        return err
+        return nil, err
     }
     host = os.Getenv("PG_HOST")
     portStr := os.Getenv("PG_PORT")
     port, err = strconv.Atoi(portStr)
     if err != nil {
         fmt.Printf("Invalid port number: %v\n", err)
-        return err
+        return nil, err
     }
     user = os.Getenv("PG_USER")
     password = os.Getenv("PG_PASS")
@@ -55,7 +55,7 @@ func CreateDatabase() error {
     db, err := sql.Open("postgres", psqlInfo)
     if err != nil {
         fmt.Println("Error opening Postgres", err)
-        return err
+        return nil, err
     }
     defer db.Close()
 
@@ -65,28 +65,62 @@ func CreateDatabase() error {
     err = db.QueryRow(query).Scan(&exists)
     if err != nil {
         fmt.Println("Error checking database existence", err)
-        return err
+        return nil, err
     }
 
     if exists {
         fmt.Printf("Database %s already exists\n", dbname)
-        return nil
+
+	    psqlInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+
+	    newDB, err := sql.Open("postgres", psqlInfo)
+	    if err != nil {
+		    return nil, fmt.Errorf("Error connecting to existing database: %v", err)
+	    }
+	    return newDB, nil
     }
 
     // Create the database if it does not exist
     _, err = db.Exec("CREATE DATABASE " + dbname)
     if err != nil {
         fmt.Println("Error creating database", err)
-        return err
+        return nil, err
     }
 
     fmt.Printf("Database %s created successfully\n", dbname)
 
-    err = CreateTables(db)
+
+    newDB, err := sql.Open("postgres", psqlInfo)
     if err != nil {
-	    return fmt.Errorf("Error creating tables")
+	    return nil, fmt.Errorf("Error connecting to new database: %v\n", err)
     }
-    return nil
+    // Create Tables 
+    //err = CreateTables(db)
+    //if err != nil {
+	    //return fmt.Errorf("Error creating tables")
+    //}
+    return newDB, nil
+}
+
+func ShowDatabases(db *sql.DB) error {
+	fmt.Println("Listing all Databases")
+	rows, err := db.Query("SELECT datname FROM pg_database WHERE datistemplate = false")
+	if err != nil {
+		fmt.Println("Error listing Databases", err)
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var datname string
+		if err := rows.Scan(&datname); err != nil {
+			fmt.Println("Error scanning database name", err)
+			return err
+		}
+		fmt.Println(" -", datname)
+	}
+
+	return nil
 }
 
 func CreateTables(db *sql.DB) error {
@@ -122,26 +156,5 @@ func CreateTables(db *sql.DB) error {
 
 	return nil
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
