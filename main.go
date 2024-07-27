@@ -90,6 +90,10 @@ func main() {
 	}
 	pages := []Page{
 		{
+			Title:   "Todo",
+			Content: todo.ToDoPage(),
+		},
+		{
 		  Title:   "Finances",
 		  Content: finance.FinancePage(),
 		},
@@ -106,10 +110,6 @@ func main() {
 		// 	Title:   "Page2",
 		// 	Content: page2.Page2(),
 		// },
-		{
-			Title:   "Todo",
-			Content: todo.ToDoPage(),
-		},
 	}
 
 	// Add pages to the notebook

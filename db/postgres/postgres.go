@@ -7,6 +7,7 @@ import (
     "os"
     "github.com/joho/godotenv"
     "strconv"
+    "time"
 )
 
 type Candle struct {
@@ -24,14 +25,50 @@ type Timeframe struct {
     Tf    int
 }
 
+
+type Project struct {
+	Id int64
+	Title string
+	Description string
+	Created_at time.Time
+}
+
 var host string
 var port int
 var user string
 var password string
 var dbname string
 
+func DBConnect() (*sql.DB, error) {
+	
+	fmt.Println("\n------------------------------\n DBConnect \n------------------------------\n")
+    host = os.Getenv("PG_HOST")
+    portStr := os.Getenv("PG_PORT")
+    port, err := strconv.Atoi(portStr)
+    if err != nil {
+        fmt.Printf("Invalid port number: %v\n", err)
+        return nil, err
+    }
+    user = os.Getenv("PG_USER")
+    password = os.Getenv("PG_PASS")
+    dbname = os.Getenv("PG_DBNAME")
+
+    // Connect to the default 'postgres' database to check for the existence of the target database
+    psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
+
+    db, err := sql.Open("postgres", psqlInfo)
+    if err != nil {
+        fmt.Println("Error opening Postgres", err)
+        return nil, err
+    }
+    //defer db.Close()
+
+    return db, nil
+
+}
+
 func CreateDatabase() (*sql.DB, error) {
-    fmt.Println("\n------------------------------\n Create Postgres Database \n------------------------------\n")
+    fmt.Println("\n------------------------------\n CreateDatabase \n------------------------------\n")
 
     err := godotenv.Load()
     if err != nil {
@@ -103,7 +140,7 @@ func CreateDatabase() (*sql.DB, error) {
 }
 
 func ShowDatabases(db *sql.DB) error {
-	fmt.Println("Listing all Databases")
+	fmt.Println("\n------------------------------\n ShowDatabases \n------------------------------\n")
 	rows, err := db.Query("SELECT datname FROM pg_database WHERE datistemplate = false")
 	if err != nil {
 		fmt.Println("Error listing Databases", err)
@@ -124,8 +161,7 @@ func ShowDatabases(db *sql.DB) error {
 }
 
 func CreateTables(db *sql.DB) error {
-	fmt.Println("Create Tables")
-
+	fmt.Println("\n------------------------------\n CreatTables \n------------------------------\n")
 	_, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS projects (
 			id SERIAL PRIMARY KEY,
@@ -158,7 +194,7 @@ func CreateTables(db *sql.DB) error {
 }
 
 func ListTables(db *sql.DB) error {
-	fmt.Println("Listing all tables")
+	fmt.Println("\n------------------------------\n ListTables \n------------------------------\n")
 	rows, err := db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
 	if err != nil {
 		fmt.Println("Error listing tables", err)
@@ -177,3 +213,42 @@ func ListTables(db *sql.DB) error {
 
 	return nil
 }
+
+func GetProjects(db *sql.DB) ([]Project, error) {
+	fmt.Println("\n---------------------------------------------------\n Get Projects \n---------------------------------------------------\n")
+
+	var projects []Project
+	rows, err := db.Query("SELECT * FROM projects;")
+	if err != nil {
+		fmt.Println("Error listing projects", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var project Project
+		if err := rows.Scan(project); err != nil {
+			fmt.Println("Error scanning Projects table", err)
+			return nil, err
+		}
+		projects = append(projects, project)
+		fmt.Println(" -", project)
+	}
+	return projects, nil
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
