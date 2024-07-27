@@ -84,3 +84,57 @@ func CreateDatabase() error {
     return nil
 }
 
+func CreateTables(db *sql.DB) error {
+	fmt.Println("Create Tables")
+
+	_, err = db.Exec(`
+
+		CREATE TABLE IF NOT EXISTS todos (
+			id SERIAL PRIMARY KEY,
+			project_id INTEGER REFERENCES projects(id),
+			title VARCHAR(100) NOT NULL,
+			description TEXT,
+			completed BOOLEAN DEFAULT FALSE,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Println("Error creating TODOs table")
+	}
+
+	_, err = db.Exec(`
+
+		CREATE TABLE IF NOT EXISTS projects (
+			id SERIAL PRIMARY KEY,
+			title VARCHAR(100) NOT NULL,
+			description TEXT,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Println("Error creating TODOs table")
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
