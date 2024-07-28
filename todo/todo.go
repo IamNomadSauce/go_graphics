@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"gogtk/db/postgres"
 	"time"
+  "strconv"
 
 )
 
@@ -25,6 +26,7 @@ type ToDo struct {
 
 var projects []Project
 var todos []ToDo
+var project_new bool = false
 
 // ---------------------------------------------------------
 
@@ -41,7 +43,7 @@ func GetProjects(db *sql.DB) ([]Project, error) {
 
 	for rows.Next() {
 		var project Project
-		if err := rows.Scan(project); err != nil {
+		if err := rows.Scan(&project.Id, &project.Title, &project.Description, &project.Created_at); err != nil {
 			fmt.Println("Error scanning Projects table", err)
 			return nil, err
 		}
@@ -104,78 +106,148 @@ func ToDoPage() *gtk.Box {
 	}
 	fmt.Println("Current Projects", len(projects))
 
-
 	//
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 8)
-	label, _ := gtk.LabelNew("Project Management")
+	page_box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	//page_title, _ := gtk.LabelNew("Project Management")
 	//
-	//projects_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 8)
+	projects_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+	//projects_header, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	prj_stmt := fmt.Sprintf("Projects: %d", len(projects))
 	projects_lbl, _ := gtk.LabelNew(prj_stmt)
+	prj_title, _ := gtk.EntryNew()
+
+  prj_new_btn, _ := gtk.ButtonNewWithLabel("New Project")
+
+	projects_box.PackStart(projects_lbl, false, false, 0)
+  projects_box.PackStart(prj_new_btn, false, false, 0)
+
+	projects_box.PackStart(prj_title, false, false, 0)
+
+
+  new_project_label, _ := gtk.LabelNew(strconv.FormatBool(project_new))
+  projects_box.PackStart(new_project_label, false, false, 0)
+
+
+  // New Project box
+  new_prj_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+  //title_input, _ := gtk.EntryNew()
+  //description_input, _ := gtk.EntryNew()
+  submit_new_project, _ := gtk.ButtonNewWithLabel("Submit")
+
+  //title_input.Hide()
+  //description_input.Hide()
+  if project_new {
+    submit_new_project.Hide()
+  }
+
+  //new_prj_box.PackStart(title_input, false, false, 10)
+  //new_prj_box.PackStart(description_input, false, false, 10)
+  new_prj_box.PackStart(submit_new_project, false, false, 10)
+
+  projects_box.PackStart(new_prj_box, false, false, 10)
+
+  //projects_box.SetVisible(false)
+
+  //
+  
+  prj_new_btn.Connect("clicked", func () {
+    project_new = !project_new
+    new_project_label.SetText(strconv.FormatBool(project_new))
+    fmt.Println("New Project", project_new)
+
+    if project_new {
+      prj_new_btn.Hide()
+      submit_new_project.Show()
+    } else {
+      prj_new_btn.Show()
+      submit_new_project.Hide()
+
+    }
+  })
+
+  submit_new_project.Connect("clicked", func() {
+    project_new = !project_new
+    submit_new_project.Hide()
+    prj_new_btn.Show()
+    fmt.Println("Submit", project_new)
+  })
+
+  //
+  todos_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+  todos_stmt := fmt.Sprintf("Todos: %d", len(todos))
+  todos_lbl, _ := gtk.LabelNew(todos_stmt)
+  todo_title, _ := gtk.EntryNew()
+  
+  todos_box.PackStart(todos_lbl, false, false, 0)
+  todos_box.PackStart(todo_title, false, false, 0)
+
+	//
+
+	//header, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+	//header.PackStart(page_title, false, false, 0)
+
+	//page_box.PackStart(header, false, false, 0)
+	page_box.PackStart(projects_box, false, false, 0)
+	page_box.PackStart(todos_box, false, false, 0)
 
 	//todos_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 8)
 
 	// text, _ := gtk.LabelNew("Add Todos to your list")
-	header, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
-
-	box.PackStart(label, false, false, 0)
-	box.PackStart(projects_lbl, false, false, 0)
 
 	// New Todo
-	new_todo_btn, _ := gtk.ButtonNewWithLabel("Add ToDo")
-	todo, _ := gtk.EntryNew()
+	//new_todo_btn, _ := gtk.ButtonNewWithLabel("Add ToDo")
+	//todo, _ := gtk.EntryNew()
 
 	// List ToDos
-	todoList, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
-	if err != nil {
-		fmt.Println("Todolist Error", err)
-	}
+	// todoList, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
+	// if err != nil {
+	// 	fmt.Println("Todolist Error", err)
+	// }
 
 	// ----------------------------------------------------------------
 	// Todo Column Container
-	todoColumns, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 20)
-	if err != nil {
-		fmt.Println("Error creating Todo Columns", err)
-	}
-	// Container for Incomplete Todos
-	completedTodos, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
-	if err != nil {
-		fmt.Println("Error creating Incomplete Column", err)
-	}
-
-	// Container for Completed Todos
-	incompleteTodos, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
-	if err != nil {
-		fmt.Println("Error creating Completed Column", err)
-	}
-
+	// todoColumns, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 20)
+	// if err != nil {
+	// 	fmt.Println("Error creating Todo Columns", err)
+	// }
+	// // Container for Incomplete Todos
+	// completedTodos, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
+	// if err != nil {
+	// 	fmt.Println("Error creating Incomplete Column", err)
+	// }
+	//
+	// // Container for Completed Todos
+	// incompleteTodos, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 5)
+	// if err != nil {
+	// 	fmt.Println("Error creating Completed Column", err)
+	// }
+	//
 	// ----------------------------------------------------------------
 
-	new_todo_btn.Connect("clicked", func() {
-		todoText, err := todo.GetText()
-		if err != nil {
-			fmt.Println("Error GetText for todo", err)
-		}
-		fmt.Println("Add ToDo", todoText)
-		todos = append(todos, ToDo{Todo: todoText, Completed: false})
-		updateTodoList(incompleteTodos, completedTodos)
-		fmt.Println("\n-----------------------\n")
-		todoList.ShowAll() // Render the list
-	})
-
+	// new_todo_btn.Connect("clicked", func() {
+	// 	todoText, err := todo.GetText()
+	// 	if err != nil {
+	// 		fmt.Println("Error GetText for todo", err)
+	// 	}
+	// 	fmt.Println("Add ToDo", todoText)
+	// 	todos = append(todos, ToDo{Todo: todoText, Completed: false})
+	// 	updateTodoList(incompleteTodos, completedTodos)
+	// 	fmt.Println("\n-----------------------\n")
+	// 	todoList.ShowAll() // Render the list
+	// })
+	//
 	// ----------------------------------------
 
-	box.PackStart(header, false, false, 0)
-	header.PackStart(new_todo_btn, false, false, 0)
-	header.PackStart(todo, false, false, 0)
-	box.PackStart(new_todo_btn, false, false, 0)
-	box.PackStart(todoColumns, false, false, 0)
-	// --------
-	todoColumns.PackStart(incompleteTodos, true, true, 0)
-	todoColumns.PackStart(completedTodos, true, true, 0)
-
-	updateTodoList(incompleteTodos, completedTodos) // Initial updade to display todos
-	return box
+	//header.PackStart(new_todo_btn, false, false, 0)
+	//header.PackStart(todo, false, false, 0)
+	//page_box.PackStart(new_todo_btn, false, false, 0)
+	// page_box.PackStart(todoColumns, false, false, 0)
+	// // --------
+	// todoColumns.PackStart(incompleteTodos, true, true, 0)
+	// todoColumns.PackStart(completedTodos, true, true, 0)
+	//
+	// updateTodoList(incompleteTodos, completedTodos) // Initial updade to display todos
+	return page_box
 }
 
 func updateTodoList(incompleteTodos, completedTodos *gtk.Box) {
