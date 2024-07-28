@@ -136,9 +136,8 @@ func ToDoPage() *gtk.Box {
 
   //title_input.Hide()
   //description_input.Hide()
-  if project_new {
-    submit_new_project.Hide()
-  }
+  submit_new_project.SetNoShowAll(true)
+  submit_new_project.Hide()
 
   //new_prj_box.PackStart(title_input, false, false, 10)
   //new_prj_box.PackStart(description_input, false, false, 10)
