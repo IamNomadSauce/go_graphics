@@ -128,22 +128,47 @@ func ToDoPage() *gtk.Box {
   projects_box.PackStart(new_project_label, false, false, 0)
 
 
+
+  // Frame
+  frame, _ := gtk.FrameNew("")
+  frame.SetBorderWidth(5)
+  frame.SetShadowType(gtk.SHADOW_ETCHED_IN)
+  frame.SetSizeRequest(400, 200)
+
+  frameStyle, _ := frame.GetStyleContext()
+  frameStyle.AddClass("frame-white")
+  cssProvider, _ := gtk.CssProviderNew()
+  cssProvider.LoadFromData(`
+    .frame-white {
+      background-color: white;
+    }
+  `)
+
   // New Project box
   new_prj_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
-  //title_input, _ := gtk.EntryNew()
-  //description_input, _ := gtk.EntryNew()
+  title_input, _ := gtk.EntryNew()
+  description_input, _ := gtk.EntryNew()
   submit_new_project, _ := gtk.ButtonNewWithLabel("Submit")
 
-  //title_input.Hide()
-  //description_input.Hide()
-  submit_new_project.SetNoShowAll(true)
-  submit_new_project.Hide()
+  //
 
-  //new_prj_box.PackStart(title_input, false, false, 10)
-  //new_prj_box.PackStart(description_input, false, false, 10)
+  new_prj_box.PackStart(title_input, false, false, 10)
+  new_prj_box.PackStart(description_input, false, false, 10)
   new_prj_box.PackStart(submit_new_project, false, false, 10)
 
-  projects_box.PackStart(new_prj_box, false, false, 10)
+  frame.Add(new_prj_box)
+
+
+  submit_new_project.SetNoShowAll(true)
+  title_input.SetNoShowAll(true)
+  description_input.SetNoShowAll(true)
+
+  title_input.Hide()
+  description_input.Hide()
+  submit_new_project.Hide()
+
+  projects_box.PackStart(frame, false, false, 10)
+  projects_box.ShowAll()
 
   //projects_box.SetVisible(false)
 
@@ -156,9 +181,15 @@ func ToDoPage() *gtk.Box {
 
     if project_new {
       prj_new_btn.Hide()
+      frame.Show()
+      title_input.Show()
+      description_input.Show()
       submit_new_project.Show()
     } else {
       prj_new_btn.Show()
+      frame.Hide()
+      description_input.Hide()
+      title_input.Hide()
       submit_new_project.Hide()
 
     }
@@ -167,6 +198,9 @@ func ToDoPage() *gtk.Box {
   submit_new_project.Connect("clicked", func() {
     project_new = !project_new
     submit_new_project.Hide()
+    title_input.Hide()
+    description_input.Hide()
+    frame.Hide()
     prj_new_btn.Show()
     fmt.Println("Submit", project_new)
   })
