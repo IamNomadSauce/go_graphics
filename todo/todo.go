@@ -196,6 +196,20 @@ func ToDoPage() *gtk.Box {
   })
 
   submit_new_project.Connect("clicked", func() {
+    var title string
+    var description string
+    title, err = title_input.GetText()
+    if err != nil {
+      fmt.Printf("Error getting text for title_input \n%v", err)
+    }
+    description, err = description_input.GetText()
+    if err != nil {
+      fmt.Printf("Error getting text for description_input \n%v", err)
+    }
+    err := postgres.CreateProject(title, description)
+    if err != nil {
+      fmt.Printf("Error inserting new project %v", err)
+    }
     project_new = !project_new
     submit_new_project.Hide()
     title_input.Hide()

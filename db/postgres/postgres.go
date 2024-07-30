@@ -237,7 +237,29 @@ func GetProjects(db *sql.DB) ([]Project, error) {
 	return projects, nil
 }
 
+func CreateProject(title, description string) error {
+	fmt.Println("\n---------------------------------------------------\n CreateProject \n---------------------------------------------------\n")
+  fmt.Printf("\n Title: %s \n Description: %s", title, description)
+  
+  db, err := DBConnect()
+  if err != nil {
+    fmt.Printf("Error Connecting to DB %v", err)
+  }
+  defer db.Close()
 
+  sqlStatement := `
+    INSERT INTO projects (title, description, created_at)
+    VALUES ($1, $2, $3)
+    RETURNING id`
+
+  var id int64
+  err = db.QueryRow(sqlStatement, title, description, time.Now()).Scan(&id)
+  if err != nil {
+    return fmt.Errorf("Error inserting new project into database: \n %v", err)
+  }
+  fmt.Printf("New project created successfully with ID: %v", id)
+  return nil
+}
 
 
 
