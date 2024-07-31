@@ -92,6 +92,38 @@ func createProject(title, description string, db *sql.DB) error {
 
 }
 
+// css implementation
+func cssWdgScnBytes(data []byte) error {
+
+	cssProv, err := gtk.CssProviderNew()
+	if err == nil {
+		if err = cssProv.LoadFromData(string(data)); err == nil {
+			screen, err := gdk.ScreenGetDefault()
+			if err != nil {
+				return err
+			}
+			gtk.AddProviderForScreen(screen, cssProv, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		}
+	}
+	return err
+}
+
+
+var css = []byte(`
+  #frame-white {
+    background-color: #3e3e3e;
+  }
+  #entry, .entry {
+    background-color: #ffffff;
+  }
+  #project-label {
+    border: 1px solid #3e3e3e;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 3px;
+  }
+  `)
+
 // ---------------------------------------------------------
 func ToDoPage() *gtk.Box {
 
@@ -126,42 +158,23 @@ func ToDoPage() *gtk.Box {
   new_project_label, _ := gtk.LabelNew(strconv.FormatBool(project_new))
   projects_box.PackStart(new_project_label, false, false, 0)
 
+  //projects_box.SetName("frame-white")
 
 
-  // Frame
-
-  cssProvider, _ := gtk.CssProviderNew()
-  css := `
-  .frame-white {
-    background-color: #ffffff;
+  //cssProvider, _ := gtk.CssProviderNew()
+  all_projects, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+  for _, project := range projects {
+    projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:%s \n\nDescription:\n%s", project.Title, project.Description))
+    projectLabel.SetName("project-label")
+    projectLabel.SetSizeRequest(350, 150)
+    all_projects.PackStart(projectLabel, false, false, 0)
   }
-  entry, .entry {
-    background-color: #ffffff;
-  }
-  .project-label {
-    border: 2px solid #ffffff;
-    padding: 10px;
-  }
-  `
-  err = cssProvider.LoadFromData(css)
-  if err != nil {
-    fmt.Printf("error loading CSS %v\n", err)
-  }
-  
-  screen, _ := gdk.ScreenGetDefault()
-  gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-
+  //all_projects.SetName("frame-white")
+  cssWdgScnBytes(css)
 
 
   // All projects
-  all_projects, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
-  for _, project := range projects {
-    projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:%s: %s", project.Title, project.Description))
-    projectLabel.SetName("project-label")
-    all_projects.PackStart(projectLabel, false, false, 0)
-
-  }
-  projects_box.PackStart(all_projects, false, false, 15)
+  projects_box.PackStart(all_projects, false, false, 0)
 
   // New Project box
   new_prj_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -173,11 +186,11 @@ func ToDoPage() *gtk.Box {
   description_input.SetName("entry")
   //
 
-  title_input_style, _ := title_input.GetStyleContext()
-  title_input_style.AddProvider(cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+  //title_input_style, _ := title_input.GetStyleContext()
+  //title_input_style.AddProvider(cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
-  description_input_style, _ := description_input.GetStyleContext()
-  description_input_style.AddProvider(cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+  //description_input_style, _ := description_input.GetStyleContext()
+  //description_input_style.AddProvider(cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
   new_prj_box.PackStart(title_input, false, false, 10)
   new_prj_box.PackStart(description_input, false, false, 10)
