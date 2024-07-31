@@ -213,28 +213,27 @@ func ListTables(db *sql.DB) error {
 
 	return nil
 }
-
 func GetProjects(db *sql.DB) ([]Project, error) {
-	fmt.Println("\n---------------------------------------------------\n Get Projects \n---------------------------------------------------\n")
+    fmt.Println("\n---------------------------------------------------\n Get Projects \n---------------------------------------------------\n")
 
-	var projects []Project
-	rows, err := db.Query("SELECT * FROM projects;")
-	if err != nil {
-		fmt.Println("Error listing projects", err)
-		return nil, err
-	}
-	defer rows.Close()
+    var projects []Project
+    rows, err := db.Query("SELECT id, title, description, created_at FROM projects;")
+    if err != nil {
+        fmt.Println("Error listing projects", err)
+        return nil, err
+    }
+    defer rows.Close()
 
-	for rows.Next() {
-		var project Project
-		if err := rows.Scan(project); err != nil {
-			fmt.Println("Error scanning Projects table", err)
-			return nil, err
-		}
-		projects = append(projects, project)
-		fmt.Println(" -", project)
-	}
-	return projects, nil
+    for rows.Next() {
+        var project Project
+        if err := rows.Scan(&project.Id, &project.Title, &project.Description, &project.Created_at); err != nil {
+            fmt.Println("Error scanning Projects table", err)
+            return nil, err
+        }
+        projects = append(projects, project)
+        fmt.Println(" -", project)
+    }
+    return projects, nil
 }
 
 func CreateProject(title, description string) error {

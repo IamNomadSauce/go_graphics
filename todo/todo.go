@@ -5,6 +5,7 @@ import (
 	"gogtk/common"
 
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/gotk3/gotk3/gdk"
 	"database/sql"
 	"gogtk/db/postgres"
 	"time"
@@ -114,14 +115,12 @@ func ToDoPage() *gtk.Box {
 	//projects_header, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	prj_stmt := fmt.Sprintf("Projects: %d", len(projects))
 	projects_lbl, _ := gtk.LabelNew(prj_stmt)
-	prj_title, _ := gtk.EntryNew()
 
   prj_new_btn, _ := gtk.ButtonNewWithLabel("New Project")
 
 	projects_box.PackStart(projects_lbl, false, false, 0)
   projects_box.PackStart(prj_new_btn, false, false, 0)
 
-	projects_box.PackStart(prj_title, false, false, 0)
 
 
   new_project_label, _ := gtk.LabelNew(strconv.FormatBool(project_new))
@@ -130,19 +129,39 @@ func ToDoPage() *gtk.Box {
 
 
   // Frame
-  frame, _ := gtk.FrameNew("")
-  frame.SetBorderWidth(5)
-  frame.SetShadowType(gtk.SHADOW_ETCHED_IN)
-  frame.SetSizeRequest(400, 200)
 
-  frameStyle, _ := frame.GetStyleContext()
-  frameStyle.AddClass("frame-white")
   cssProvider, _ := gtk.CssProviderNew()
-  cssProvider.LoadFromData(`
-    .frame-white {
-      background-color: white;
-    }
-  `)
+  css := `
+  .frame-white {
+    background-color: #ffffff;
+  }
+  entry, .entry {
+    background-color: #ffffff;
+  }
+  .project-label {
+    border: 2px solid #ffffff;
+    padding: 10px;
+  }
+  `
+  err = cssProvider.LoadFromData(css)
+  if err != nil {
+    fmt.Printf("error loading CSS %v\n", err)
+  }
+  
+  screen, _ := gdk.ScreenGetDefault()
+  gtk.AddProviderForScreen(screen, cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+
+
+  // All projects
+  all_projects, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+  for _, project := range projects {
+    projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:%s: %s", project.Title, project.Description))
+    projectLabel.SetName("project-label")
+    all_projects.PackStart(projectLabel, false, false, 0)
+
+  }
+  projects_box.PackStart(all_projects, false, false, 15)
 
   // New Project box
   new_prj_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -150,13 +169,20 @@ func ToDoPage() *gtk.Box {
   description_input, _ := gtk.EntryNew()
   submit_new_project, _ := gtk.ButtonNewWithLabel("Submit")
 
+  title_input.SetName("entry")
+  description_input.SetName("entry")
   //
+
+  title_input_style, _ := title_input.GetStyleContext()
+  title_input_style.AddProvider(cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+
+  description_input_style, _ := description_input.GetStyleContext()
+  description_input_style.AddProvider(cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
   new_prj_box.PackStart(title_input, false, false, 10)
   new_prj_box.PackStart(description_input, false, false, 10)
   new_prj_box.PackStart(submit_new_project, false, false, 10)
 
-  frame.Add(new_prj_box)
 
 
   submit_new_project.SetNoShowAll(true)
@@ -167,7 +193,7 @@ func ToDoPage() *gtk.Box {
   description_input.Hide()
   submit_new_project.Hide()
 
-  projects_box.PackStart(frame, false, false, 10)
+  projects_box.PackStart(new_prj_box, false, false, 10)
   projects_box.ShowAll()
 
   //projects_box.SetVisible(false)
@@ -181,13 +207,11 @@ func ToDoPage() *gtk.Box {
 
     if project_new {
       prj_new_btn.Hide()
-      frame.Show()
       title_input.Show()
       description_input.Show()
       submit_new_project.Show()
     } else {
       prj_new_btn.Show()
-      frame.Hide()
       description_input.Hide()
       title_input.Hide()
       submit_new_project.Hide()
@@ -214,7 +238,6 @@ func ToDoPage() *gtk.Box {
     submit_new_project.Hide()
     title_input.Hide()
     description_input.Hide()
-    frame.Hide()
     prj_new_btn.Show()
     fmt.Println("Submit", project_new)
   })
@@ -295,6 +318,40 @@ func ToDoPage() *gtk.Box {
 	//
 	// updateTodoList(incompleteTodos, completedTodos) // Initial updade to display todos
 	return page_box
+}
+
+
+
+func redrawProjectsPage(projectsBox *gtk.Box) {
+    // Clear existing content
+    children := projectsBox.GetChildren()
+    children.Foreach(func(item interface{}) {
+      widget := item.(*gtk.Widget)
+      projectsBox.Remove(widget)
+    })
+
+    // Fetch updated projects from the database
+    db, err := postgres.DBConnect()
+    if err != nil {
+        fmt.Println("Error connecting to database:", err)
+        return
+    }
+    defer db.Close()
+
+    // projects, err := postgres.GetProjects(db)
+    // if err != nil {
+    //     fmt.Println("Error retrieving projects:", err)
+    //     return
+    // }
+    //
+    // // Recreate project list
+    // for _, project := range projects {
+    //     projectLabel, _ := gtk.LabelNew(fmt.Sprintf("%s: %s", project.Title, project.Description))
+    //     projectsBox.PackStart(projectLabel, false, false, 0)
+    // }
+
+    // Show all new widgets
+    projectsBox.ShowAll()
 }
 
 func updateTodoList(incompleteTodos, completedTodos *gtk.Box) {
