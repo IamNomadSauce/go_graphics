@@ -114,7 +114,7 @@ var css = []byte(`
     background-color: #3e3e3e;
   }
   #entry, .entry {
-    background-color: #ffffff;
+    background-color: #3e3e3e;
   }
   #project-label {
     border: 1px solid #3e3e3e;
@@ -161,12 +161,16 @@ func ToDoPage() *gtk.Box {
   new_project_label, _ := gtk.LabelNew(strconv.FormatBool(project_new))
   sidebar.PackStart(new_project_label, false, false, 0)
   sidebar.SetName("project-label")
-  sidebar.SetSizeRequest(350, 1200)
+  sidebar.SetSizeRequest(150, 250)
 
   //projects_box.SetName("frame-white")
 
 
   //cssProvider, _ := gtk.CssProviderNew()
+  scrolled_window, err := gtk.ScrolledWindowNew(nil, nil)
+  if err != nil {
+    return nil
+  }
   all_projects, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
   for _, project := range projects {
     project_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
@@ -174,25 +178,30 @@ func ToDoPage() *gtk.Box {
     projectDescription, _ := gtk.LabelNew(fmt.Sprintf("Description:\n%s", project.Description))
     project_box.SetName("project-label")
     all_projects.SetName("project-label")
-    projectLabel.SetSizeRequest(650, 150)
+    projectLabel.SetSizeRequest(250, 150)
     projectLabel.SetXAlign(0)
     projectDescription.SetXAlign(0)
     project_box.PackStart(projectLabel, false, false, 0)
     project_box.PackStart(projectDescription, false, false, 0)
     all_projects.PackStart(project_box, false, false, 0)
   }
+
+  scrolled_window.Add(all_projects)
+  scrolled_window.SetSizeRequest(350, 800)
+
+  sidebar.PackEnd(scrolled_window, false, false, 0)
   //all_projects.SetName("frame-white")
   cssWdgScnBytes(css)
 
-
-  // All projects
-  projects_box.PackStart(all_projects, false, false, 0)
-
+  // -----------------------------------
   // New Project box
+  // -----------------------------------
+
   new_prj_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
   title_input, _ := gtk.EntryNew()
   description_input, _ := gtk.EntryNew()
   submit_new_project, _ := gtk.ButtonNewWithLabel("Submit")
+  cancel_new_project, _ := gtk.ButtonNewWithLabel("Cancel")
 
   title_input.SetName("entry")
   description_input.SetName("entry")
@@ -206,10 +215,17 @@ func ToDoPage() *gtk.Box {
 
   new_prj_box.PackStart(title_input, false, false, 10)
   new_prj_box.PackStart(description_input, false, false, 10)
-  new_prj_box.PackStart(submit_new_project, false, false, 10)
+
+  buttons_box, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
+
+  buttons_box.PackStart(submit_new_project, false, false, 0)
+  buttons_box.PackStart(cancel_new_project, false, false, 0)
+
+  new_prj_box.PackEnd(buttons_box, false, false, 0)
 
 
 
+  cancel_new_project.SetNoShowAll(true)
   submit_new_project.SetNoShowAll(true)
   title_input.SetNoShowAll(true)
   description_input.SetNoShowAll(true)
@@ -217,8 +233,9 @@ func ToDoPage() *gtk.Box {
   title_input.Hide()
   description_input.Hide()
   submit_new_project.Hide()
+  cancel_new_project.Hide()
 
-  sidebar.PackStart(new_prj_box, false, false, 10)
+  sidebar.PackStart(new_prj_box, false, false, 0)
   projects_box.ShowAll()
 
   //projects_box.SetVisible(false)
@@ -235,12 +252,13 @@ func ToDoPage() *gtk.Box {
       title_input.Show()
       description_input.Show()
       submit_new_project.Show()
+      cancel_new_project.Show()
     } else {
       prj_new_btn.Show()
       description_input.Hide()
       title_input.Hide()
       submit_new_project.Hide()
-
+      cancel_new_project.Hide()
     }
   })
 
@@ -267,6 +285,17 @@ func ToDoPage() *gtk.Box {
     fmt.Println("Submit", project_new)
   })
 
+  cancel_new_project.Connect("clicked", func() {
+
+    project_new = !project_new
+    submit_new_project.Hide()
+    cancel_new_project.Hide()
+    title_input.Hide()
+    description_input.Hide()
+    prj_new_btn.Show()
+    fmt.Println("Cancel new project")
+  })
+
   //
   todos_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
   todos_stmt := fmt.Sprintf("Todos: %d", len(todos))
@@ -285,9 +314,9 @@ func ToDoPage() *gtk.Box {
 	//header.PackStart(page_title, false, false, 0)
 
 	//page_box.PackStart(header, false, false, 0)
-  page_box.PackStart(sidebar, false, false, 15)
-	page_box.PackStart(projects_box, false, false, 15)
-	page_box.PackStart(todos_box, false, false, 15)
+  page_box.PackStart(sidebar, false, false, 0)
+	//page_box.PackStart(projects_box, false, false, 15)
+	page_box.PackStart(todos_box, false, false, 0)
 
 	//todos_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 8)
 
