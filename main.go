@@ -79,7 +79,7 @@ func main() {
 	if err != nil {
 		fmt.Println("Unable to create drawing area:", err)
 	}
-	drawArea.SetSizeRequest(1200, 1200)
+	drawArea.SetSizeRequest(40, 40)
 
   // Comment for magic temp
 

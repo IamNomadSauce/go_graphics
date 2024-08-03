@@ -128,6 +128,9 @@ var css = []byte(`
 func ToDoPage() *gtk.Box {
 
 	fmt.Println("\n----------------------------------------------------\n Project Management Init \n----------------------------------------------------\n")
+
+
+
 	db, err := postgres.DBConnect()
 	if err != nil {
 		fmt.Println("Error Connecting to Database", err)
@@ -143,6 +146,8 @@ func ToDoPage() *gtk.Box {
 	page_box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	//page_title, _ := gtk.LabelNew("Project Management")
 	//
+  sidebar, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+
 	projects_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 	//projects_header, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 	prj_stmt := fmt.Sprintf("Projects: %d", len(projects))
@@ -150,13 +155,13 @@ func ToDoPage() *gtk.Box {
 
   prj_new_btn, _ := gtk.ButtonNewWithLabel("New Project")
 
-	projects_box.PackStart(projects_lbl, false, false, 0)
-  projects_box.PackStart(prj_new_btn, false, false, 0)
-
-
+	sidebar.PackStart(projects_lbl, false, false, 0)
+  sidebar.PackStart(prj_new_btn, false, false, 0)
 
   new_project_label, _ := gtk.LabelNew(strconv.FormatBool(project_new))
-  projects_box.PackStart(new_project_label, false, false, 0)
+  sidebar.PackStart(new_project_label, false, false, 0)
+  sidebar.SetName("project-label")
+  sidebar.SetSizeRequest(350, 1200)
 
   //projects_box.SetName("frame-white")
 
@@ -164,10 +169,17 @@ func ToDoPage() *gtk.Box {
   //cssProvider, _ := gtk.CssProviderNew()
   all_projects, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
   for _, project := range projects {
-    projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:%s \n\nDescription:\n%s", project.Title, project.Description))
-    projectLabel.SetName("project-label")
-    projectLabel.SetSizeRequest(350, 150)
-    all_projects.PackStart(projectLabel, false, false, 0)
+    project_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+    projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:\n%s", project.Title))
+    projectDescription, _ := gtk.LabelNew(fmt.Sprintf("Description:\n%s", project.Description))
+    project_box.SetName("project-label")
+    all_projects.SetName("project-label")
+    projectLabel.SetSizeRequest(650, 150)
+    projectLabel.SetXAlign(0)
+    projectDescription.SetXAlign(0)
+    project_box.PackStart(projectLabel, false, false, 0)
+    project_box.PackStart(projectDescription, false, false, 0)
+    all_projects.PackStart(project_box, false, false, 0)
   }
   //all_projects.SetName("frame-white")
   cssWdgScnBytes(css)
@@ -206,7 +218,7 @@ func ToDoPage() *gtk.Box {
   description_input.Hide()
   submit_new_project.Hide()
 
-  projects_box.PackStart(new_prj_box, false, false, 10)
+  sidebar.PackStart(new_prj_box, false, false, 10)
   projects_box.ShowAll()
 
   //projects_box.SetVisible(false)
@@ -261,8 +273,11 @@ func ToDoPage() *gtk.Box {
   todos_lbl, _ := gtk.LabelNew(todos_stmt)
   todo_title, _ := gtk.EntryNew()
   
+  
   todos_box.PackStart(todos_lbl, false, false, 0)
   todos_box.PackStart(todo_title, false, false, 0)
+  todos_box.SetName("project-label")
+  todos_box.SetSizeRequest(700,450)
 
 	//
 
@@ -270,8 +285,9 @@ func ToDoPage() *gtk.Box {
 	//header.PackStart(page_title, false, false, 0)
 
 	//page_box.PackStart(header, false, false, 0)
-	page_box.PackStart(projects_box, false, false, 0)
-	page_box.PackStart(todos_box, false, false, 0)
+  page_box.PackStart(sidebar, false, false, 15)
+	page_box.PackStart(projects_box, false, false, 15)
+	page_box.PackStart(todos_box, false, false, 15)
 
 	//todos_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 8)
 
