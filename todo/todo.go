@@ -34,7 +34,7 @@ var project_new bool = false
 
 func GetProjects(db *sql.DB) ([]Project, error) {
 	fmt.Println("\n---------------------------------------------------\n Get Projects \n---------------------------------------------------\n")
-	//var projects []Project
+	projects = []Project{}
 	rows, err := db.Query("SELECT * FROM projects;")
 	if err != nil {
 		fmt.Println("Error listing projects", err)
@@ -49,50 +49,62 @@ func GetProjects(db *sql.DB) ([]Project, error) {
 			return nil, err
 		}
 		projects = append(projects, project)
-		fmt.Println(" -", project)
+		//fmt.Println(" -", project)
 	}
 	return projects, nil
 }
 
-// ---------------------------------------------------------
 
-func createProject(title, description string, db *sql.DB) error {
-	fmt.Println("\n---------------------------------------------------\n Create Project \n---------------------------------------------------\n")
+func redrawProjectsPage(projectsBox *gtk.Box) {
+    fmt.Println("\n---------------------------------------------------\n Redraw Project \n---------------------------------------------------\n")
 
-	stmt, err := db.Prepare("INSERT INTO projects (title, description, created_at) VALUES (?, ?, ?)")
-	if err != nil {
-		return fmt.Errorf("Error Preparing statement: %v", err)
+    // Clear existing content
+    children := projectsBox.GetChildren()
+    children.Foreach(func(item interface{}) {
+        widget := item.(*gtk.Widget)
+        projectsBox.Remove(widget)
+    })
 
-	}
-	defer stmt.Close()
+    // Fetch updated projects from the database
+    db, err := postgres.DBConnect()
+    if err != nil {
+        fmt.Println("Error connecting to database:", err)
+        return
+    }
+    defer db.Close()
 
-	createdAt := time.Now()
-	result, err := stmt.Exec(title, description, createdAt)
-	if err != nil {
-		return fmt.Errorf("Error getting last insert ID: %v", err)
-	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("Error getting last insert ID: %v", err)
-	}
+    projects, err := GetProjects(db)
+    if err != nil {
+        fmt.Println("Error retrieving projects:", err)
+        return
+    }
+    
+    fmt.Printf("Projects Total:\n%v", len(projects))
 
-	newProject := Project{
-		Id: 		id,
-		Title:		title,
-		Description:	description,
-		Created_at:	createdAt,
-	}
+    // Update the project count label
+    projectsLengthLabel, _ := gtk.LabelNew(fmt.Sprintf("Projects: %d", len(projects)))
+    projectsBox.PackStart(projectsLengthLabel, false, false, 0)
 
-	projects = append(projects, newProject)
+    // Recreate project list
+    for _, project := range projects {
+        projectLabel, _ := gtk.LabelNew(fmt.Sprintf("%s: %s", project.Title, project.Description))
+        projectsBox.PackStart(projectLabel, false, false, 0)
+    }
 
-	fmt.Printf("Project created successfully. ID: %d\n", id)
-
-	return nil
-
+    // Show all new widgets
+    projectsBox.ShowAll()
+    projectsBox.QueueDraw()
 }
 
+
+
+
+
+// ---------------------------------------------------------
 // css implementation
+// ---------------------------------------------------------
+
 func cssWdgScnBytes(data []byte) error {
 
 	cssProv, err := gtk.CssProviderNew()
@@ -150,8 +162,8 @@ func ToDoPage() *gtk.Box {
 
 	projects_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 	//projects_header, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
-	prj_stmt := fmt.Sprintf("Projects: %d", len(projects))
-	projects_lbl, _ := gtk.LabelNew(prj_stmt)
+	projects_length := fmt.Sprintf("Projects: %d", len(projects))
+	projects_lbl, _ := gtk.LabelNew(projects_length)
 
   prj_new_btn, _ := gtk.ButtonNewWithLabel("New Project")
 
@@ -263,6 +275,7 @@ func ToDoPage() *gtk.Box {
   })
 
   submit_new_project.Connect("clicked", func() {
+    fmt.Println("...Submit Project...")
     var title string
     var description string
     title, err = title_input.GetText()
@@ -273,14 +286,24 @@ func ToDoPage() *gtk.Box {
     if err != nil {
       fmt.Printf("Error getting text for description_input \n%v", err)
     }
+
+    fmt.Printf("New Project:\n%s\n%s\n", title, description)
+
     err := postgres.CreateProject(title, description)
     if err != nil {
-      fmt.Printf("Error inserting new project %v", err)
+      fmt.Printf("Error creating new project %v", err)
     }
+
+    redrawProjectsPage(projects_box)
+
+    title_input.SetText("")
+    description_input.SetText("")
+
     project_new = !project_new
     submit_new_project.Hide()
     title_input.Hide()
     description_input.Hide()
+    cancel_new_project.Hide()
     prj_new_btn.Show()
     fmt.Println("Submit", project_new)
   })
@@ -380,38 +403,6 @@ func ToDoPage() *gtk.Box {
 
 
 
-func redrawProjectsPage(projectsBox *gtk.Box) {
-    // Clear existing content
-    children := projectsBox.GetChildren()
-    children.Foreach(func(item interface{}) {
-      widget := item.(*gtk.Widget)
-      projectsBox.Remove(widget)
-    })
-
-    // Fetch updated projects from the database
-    db, err := postgres.DBConnect()
-    if err != nil {
-        fmt.Println("Error connecting to database:", err)
-        return
-    }
-    defer db.Close()
-
-    // projects, err := postgres.GetProjects(db)
-    // if err != nil {
-    //     fmt.Println("Error retrieving projects:", err)
-    //     return
-    // }
-    //
-    // // Recreate project list
-    // for _, project := range projects {
-    //     projectLabel, _ := gtk.LabelNew(fmt.Sprintf("%s: %s", project.Title, project.Description))
-    //     projectsBox.PackStart(projectLabel, false, false, 0)
-    // }
-
-    // Show all new widgets
-    projectsBox.ShowAll()
-}
-
 func updateTodoList(incompleteTodos, completedTodos *gtk.Box) {
 	// Clear existing todos from both containers
 	common.ClearContainer(incompleteTodos)
@@ -460,3 +451,52 @@ func updateTodoList(incompleteTodos, completedTodos *gtk.Box) {
 	incompleteTodos.ShowAll()
 	completedTodos.ShowAll()
 }
+
+
+
+
+// ---------------------------------------------------------
+
+func createProject(title, description string, projectsBox *gtk.Box) error {
+	fmt.Println("\n---------------------------------------------------\n Create Project \n---------------------------------------------------\n")
+
+  db, err := postgres.DBConnect()
+  if err != nil {
+    fmt.Printf("Error creatProject DBConnect: %v", err)
+  }
+
+	stmt, err := db.Prepare("INSERT INTO projects (title, description, created_at) VALUES (?, ?, ?)")
+	if err != nil {
+		return fmt.Errorf("Error Preparing statement: %v", err)
+
+	}
+	defer stmt.Close()
+
+	createdAt := time.Now()
+	result, err := stmt.Exec(title, description, createdAt)
+	if err != nil {
+		return fmt.Errorf("Error getting last insert ID: %v", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("Error getting last insert ID: %v", err)
+	}
+
+	newProject := Project{
+		Id: 		id,
+		Title:		title,
+		Description:	description,
+		Created_at:	createdAt,
+	}
+
+	projects = append(projects, newProject)
+
+	fmt.Printf("Project created successfully. ID: %d\n", id)
+  
+  redrawProjectsPage(projectsBox)
+
+	return nil
+
+}
+

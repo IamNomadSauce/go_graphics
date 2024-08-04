@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"gogtk/digraph"
+	//gogtk/digraph"
 	"gogtk/todo"
-  "gogtk/finance"
+  //"gogtk/finance"
 	"time"
 
 	"gogtk/db/postgres"
@@ -93,14 +93,14 @@ func main() {
 			Title:   "Todo",
 			Content: todo.ToDoPage(),
 		},
-		{
-		  Title:   "Finances",
-		  Content: finance.FinancePage(),
-		},
-		{
-			Title:   "DiGraph",
-			Content: digraph.DiGraphPage(),
-		},
+		// {
+		//   Title:   "Finances",
+		//   Content: finance.FinancePage(),
+		// },
+		// {
+		// 	Title:   "DiGraph",
+		// 	Content: digraph.DiGraphPage(),
+		// },
 		// {
 		// 	Title:   "Home",
 		// 	Content: home.HomePage(),
