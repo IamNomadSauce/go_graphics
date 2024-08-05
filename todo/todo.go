@@ -53,8 +53,6 @@ func GetProjects(db *sql.DB) ([]Project, error) {
 	}
 	return projects, nil
 }
-
-
 func redrawProjectsPage(projectsBox *gtk.Box) {
     fmt.Println("\n---------------------------------------------------\n Redraw Project \n---------------------------------------------------\n")
 
@@ -72,14 +70,11 @@ func redrawProjectsPage(projectsBox *gtk.Box) {
         return
     }
     defer db.Close()
-
-
     projects, err := GetProjects(db)
     if err != nil {
         fmt.Println("Error retrieving projects:", err)
         return
     }
-    
     fmt.Printf("Projects Total:\n%v", len(projects))
 
     // Update the project count label
@@ -92,13 +87,10 @@ func redrawProjectsPage(projectsBox *gtk.Box) {
         projectsBox.PackStart(projectLabel, false, false, 0)
     }
 
-    // Show all new widgets
+    // Show all new widgets and force redraw
     projectsBox.ShowAll()
     projectsBox.QueueDraw()
 }
-
-
-
 
 
 // ---------------------------------------------------------
@@ -274,39 +266,64 @@ func ToDoPage() *gtk.Box {
     }
   })
 
+
   submit_new_project.Connect("clicked", func() {
-    fmt.Println("...Submit Project...")
-    var title string
-    var description string
-    title, err = title_input.GetText()
-    if err != nil {
-      fmt.Printf("Error getting text for title_input \n%v", err)
-    }
-    description, err = description_input.GetText()
-    if err != nil {
-      fmt.Printf("Error getting text for description_input \n%v", err)
-    }
+      fmt.Println("...Submit Project...")
+      var title string
+      var description string
+      title, err = title_input.GetText()
+      if err != nil {
+          fmt.Printf("Error getting text for title_input \n%v", err)
+          return
+      }
+      description, err = description_input.GetText()
+      if err != nil {
+          fmt.Printf("Error getting text for description_input \n%v", err)
+          return
+      }
+      fmt.Printf("New Project:\n%s\n%s\n", title, description)
+      err = postgres.CreateProject(title, description)
+      if err != nil {
+          fmt.Printf("Error creating new project %v", err)
+          return
+      }
 
-    fmt.Printf("New Project:\n%s\n%s\n", title, description)
+      db, err := postgres.DBConnect()
+      if err != nil {
+        fmt.Printf("Error connecting to DB\n%v", err)
+      }
+      projects, err := GetProjects(db)
+      if err != nil {
+        fmt.Printf("Error Getting Projects... \n%v", err)
+      }
+      // Directly add the new project to the UI
+      projectLabel, _ := gtk.LabelNew(fmt.Sprintf("%s: %s", title, description))
+      projects_box.PackStart(projectLabel, false, false, 0)
+      projects_box.ShowAll()
+      projects_box.QueueDraw()
 
-    err := postgres.CreateProject(title, description)
-    if err != nil {
-      fmt.Printf("Error creating new project %v", err)
-    }
+      // Update the projects length label
+      projects_lbl.SetText(fmt.Sprintf("Projects: %d", len(projects)))
+      fmt.Printf("Updated projects length label: Projects: %d\n", len(projects))
 
-    redrawProjectsPage(projects_box)
+      // Clear the input fields and hide the new project form
+      title_input.SetText("")
+      description_input.SetText("")
+      project_new = !project_new
+      submit_new_project.Hide()
+      title_input.Hide()
+      description_input.Hide()
+      cancel_new_project.Hide()
+      prj_new_btn.Show()
+      fmt.Println("Submit", project_new)
 
-    title_input.SetText("")
-    description_input.SetText("")
-
-    project_new = !project_new
-    submit_new_project.Hide()
-    title_input.Hide()
-    description_input.Hide()
-    cancel_new_project.Hide()
-    prj_new_btn.Show()
-    fmt.Println("Submit", project_new)
+      // Force GTK to process pending events
+      for gtk.EventsPending() {
+          gtk.MainIteration()
+      }
   })
+
+
 
   cancel_new_project.Connect("clicked", func() {
 
