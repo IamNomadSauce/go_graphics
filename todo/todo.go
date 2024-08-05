@@ -266,62 +266,71 @@ func ToDoPage() *gtk.Box {
     }
   })
 
+submit_new_project.Connect("clicked", func() {
+    var title string
+    var description string
+    title, err = title_input.GetText()
+    if err != nil {
+        fmt.Printf("Error getting text for title_input \n%v", err)
+        return
+    }
+    description, err = description_input.GetText()
+    if err != nil {
+        fmt.Printf("Error getting text for description_input \n%v", err)
+        return
+    }
 
-  submit_new_project.Connect("clicked", func() {
-      fmt.Println("...Submit Project...")
-      var title string
-      var description string
-      title, err = title_input.GetText()
-      if err != nil {
-          fmt.Printf("Error getting text for title_input \n%v", err)
-          return
-      }
-      description, err = description_input.GetText()
-      if err != nil {
-          fmt.Printf("Error getting text for description_input \n%v", err)
-          return
-      }
-      fmt.Printf("New Project:\n%s\n%s\n", title, description)
-      err = postgres.CreateProject(title, description)
-      if err != nil {
-          fmt.Printf("Error creating new project %v", err)
-          return
-      }
+    err := postgres.CreateProject(title, description)
+    if err != nil {
+        fmt.Printf("Error creating new project %v", err)
+        return
+    }
 
-      db, err := postgres.DBConnect()
-      if err != nil {
-        fmt.Printf("Error connecting to DB\n%v", err)
-      }
-      projects, err := GetProjects(db)
-      if err != nil {
-        fmt.Printf("Error Getting Projects... \n%v", err)
-      }
-      // Directly add the new project to the UI
-      projectLabel, _ := gtk.LabelNew(fmt.Sprintf("%s: %s", title, description))
-      projects_box.PackStart(projectLabel, false, false, 0)
-      projects_box.ShowAll()
-      projects_box.QueueDraw()
+    // Create a new project box and add it to all_projects
+    project_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+    projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:\n%s", title))
+    projectDescription, _ := gtk.LabelNew(fmt.Sprintf("Description:\n%s", description))
+    project_box.SetName("project-label")
+    projectLabel.SetSizeRequest(250, 150)
+    projectLabel.SetXAlign(0)
+    projectDescription.SetXAlign(0)
+    project_box.PackStart(projectLabel, false, false, 0)
+    project_box.PackStart(projectDescription, false, false, 0)
+    all_projects.PackStart(project_box, false, false, 0)
 
-      // Update the projects length label
-      projects_lbl.SetText(fmt.Sprintf("Projects: %d", len(projects)))
-      fmt.Printf("Updated projects length label: Projects: %d\n", len(projects))
+    // Update the projects count
+    projects = append(projects, Project{Title: title, Description: description})
+    projects_lbl.SetText(fmt.Sprintf("Projects: %d", len(projects)))
 
-      // Clear the input fields and hide the new project form
-      title_input.SetText("")
-      description_input.SetText("")
-      project_new = !project_new
-      submit_new_project.Hide()
-      title_input.Hide()
-      description_input.Hide()
-      cancel_new_project.Hide()
-      prj_new_btn.Show()
-      fmt.Println("Submit", project_new)
+    // Show the new project
+    all_projects.ShowAll()
 
-      // Force GTK to process pending events
-      for gtk.EventsPending() {
-          gtk.MainIteration()
-      }
-  })
+    // Clear input fields and reset UI
+    title_input.SetText("")
+    description_input.SetText("")
+    project_new = !project_new
+    submit_new_project.Hide()
+    title_input.Hide()
+    description_input.Hide()
+    cancel_new_project.Hide()
+    prj_new_btn.Show()
+
+    fmt.Println("Submit", project_new)
+
+    // Force GTK to process pending events
+    for gtk.EventsPending() {
+        gtk.MainIteration()
+    }
+})
+
+
+
+
+
+
+
+
+
 
 
 
