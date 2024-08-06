@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	//gogtk/digraph"
+	//"gogtk/digraph"
 	"gogtk/todo"
   //"gogtk/finance"
 	"time"
