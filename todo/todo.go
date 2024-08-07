@@ -4,10 +4,10 @@ import (
 	"fmt"
 	//"gogtk/common"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/gotk3/gotk3/gdk"
 	"database/sql"
 	"gogtk/db/postgres"
 	"time"
-	"strconv"
 )
 
 type Project struct {
@@ -75,10 +75,11 @@ func redrawProjectsPage(projectsListBox *gtk.ListBox) {
 	for _, project := range projects {
 		row, _ := gtk.ListBoxRowNew()
 		box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
-		projectLabel, _ := gtk.LabelNew(fmt.Sprintf("%s: %s", project.Title, project.Description))
-    projectLabel.SetXAlign(0.1)
+    projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:\n%s\nDescription\n%s", project.Title, project.Description))
+    projectLabel.SetXAlign(0.025)
 		box.PackStart(projectLabel, false, false, 0)
     projectsListBox.SetSizeRequest(50, 50)
+    box.SetName("project-label")
 		row.Add(box)
 		projectsListBox.Add(row)
 	}
@@ -100,10 +101,17 @@ func ToDoPage() *gtk.Box {
 	if err != nil {
 		fmt.Println("Error retrieving Projects", err)
 	}
+
+  cssProvider, _ := gtk.CssProviderNew()
+  cssWdgScnBytes(css)
+
 	fmt.Println("Current Projects", len(projects))
 
 	page_box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 	sidebar, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
+
+
+
 
 	projects_length := fmt.Sprintf("Projects: %d", len(projects))
 	projects_lbl, _ := gtk.LabelNew(projects_length)
@@ -112,30 +120,19 @@ func ToDoPage() *gtk.Box {
 	sidebar.PackStart(projects_lbl, false, false, 0)
 	sidebar.PackStart(prj_new_btn, false, false, 0)
 
-	new_project_label, _ := gtk.LabelNew(strconv.FormatBool(project_new))
-	sidebar.PackStart(new_project_label, false, false, 0)
 	sidebar.SetName("project-label")
 	sidebar.SetSizeRequest(100, 250)
 
-	// Create a ScrolledWindow
-	scrolled_window, _ := gtk.ScrolledWindowNew(nil, nil)
-	scrolled_window.SetPolicy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-	scrolled_window.SetSizeRequest(700, 250)
 
-	// Create a ListBox
-	projectsListBox, _ := gtk.ListBoxNew()
-	scrolled_window.Add(projectsListBox)
-  projectsListBox.SetSizeRequest(50,50)
-
-	sidebar.PackStart(scrolled_window, true, true, 0)
-
-	redrawProjectsPage(projectsListBox)
+  
 
 	// New Project box
 	new_prj_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
   new_prj_box.SetSizeRequest(50,50)
 	title_input, _ := gtk.EntryNew()
 	description_input, _ := gtk.EntryNew()
+  description_input_style, _ := description_input.GetStyleContext()
+  description_input_style.AddProvider(cssProvider, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 	submit_new_project, _ := gtk.ButtonNewWithLabel("Submit")
 	cancel_new_project, _ := gtk.ButtonNewWithLabel("Cancel")
 
@@ -149,8 +146,24 @@ func ToDoPage() *gtk.Box {
 	buttons_box.PackStart(submit_new_project, false, false, 0)
 	buttons_box.PackStart(cancel_new_project, false, false, 0)
 
-	new_prj_box.PackEnd(buttons_box, false, false, 0)
+	new_prj_box.PackStart(buttons_box, false, false, 0)
+	sidebar.PackStart(new_prj_box, false, false, 0)
 
+	// Create a ScrolledWindow
+	scrolled_window, _ := gtk.ScrolledWindowNew(nil, nil)
+	scrolled_window.SetPolicy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+	scrolled_window.SetSizeRequest(450, 250)
+
+	// Create a ListBox
+	projectsListBox, _ := gtk.ListBoxNew()
+	scrolled_window.Add(projectsListBox)
+  projectsListBox.SetSizeRequest(50,50)
+
+	sidebar.PackStart(scrolled_window, true, true, 0)
+
+	redrawProjectsPage(projectsListBox)
+
+//
 	cancel_new_project.SetNoShowAll(true)
 	submit_new_project.SetNoShowAll(true)
 	title_input.SetNoShowAll(true)
@@ -161,11 +174,9 @@ func ToDoPage() *gtk.Box {
 	submit_new_project.Hide()
 	cancel_new_project.Hide()
 
-	sidebar.PackStart(new_prj_box, false, false, 0)
 
 	prj_new_btn.Connect("clicked", func() {
 		project_new = !project_new
-		new_project_label.SetText(strconv.FormatBool(project_new))
 		fmt.Println("New Project", project_new)
 
 		if project_new {
@@ -206,6 +217,8 @@ func ToDoPage() *gtk.Box {
 		box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 		projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:\n%s", title))
 		projectDescription, _ := gtk.LabelNew(fmt.Sprintf("Description:\n%s", description))
+    projectLabel.SetXAlign(0.025)
+    projectDescription.SetXAlign(0.025)
 		box.PackStart(projectLabel, false, false, 0)
 		box.PackStart(projectDescription, false, false, 0)
 		row.Add(box)
@@ -359,40 +372,42 @@ func ToDoPage() *gtk.Box {
 // }
 //
 //
-// // ---------------------------------------------------------
-// // css implementation
-// // ---------------------------------------------------------
-//
-// func cssWdgScnBytes(data []byte) error {
-//
-// 	cssProv, err := gtk.CssProviderNew()
-// 	if err == nil {
-// 		if err = cssProv.LoadFromData(string(data)); err == nil {
-// 			screen, err := gdk.ScreenGetDefault()
-// 			if err != nil {
-// 				return err
-// 			}
-// 			gtk.AddProviderForScreen(screen, cssProv, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-// 		}
-// 	}
-// 	return err
-// }
-//
-//
-// var css = []byte(`
-//   #frame-white {
-//     background-color: #3e3e3e;
-//   }
-//   #entry, .entry {
-//     background-color: #3e3e3e;
-//   }
-//   #project-label {
-//     border: 1px solid #3e3e3e;
-//     padding: 10px;
-//     border-radius: 5px;
-//     margin: 3px;
-//   }
-//   `)
+
+
+// ---------------------------------------------------------
+// css implementation
+// ---------------------------------------------------------
+
+func cssWdgScnBytes(data []byte) error {
+
+	cssProv, err := gtk.CssProviderNew()
+	if err == nil {
+		if err = cssProv.LoadFromData(string(data)); err == nil {
+			screen, err := gdk.ScreenGetDefault()
+			if err != nil {
+				return err
+			}
+			gtk.AddProviderForScreen(screen, cssProv, gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+		}
+	}
+	return err
+}
+
+
+var css = []byte(`
+  #frame-white {
+    background-color: #3e3e3e;
+  }
+  #entry, .entry {
+    background-color: #3e3e3e;
+  }
+  #project-label {
+    border: 1px solid #3e3e3e;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 3px;
+  }
+  `)
 //
 // // ---------------------------------------------------------
 // func ToDoPage() *gtk.Box {
