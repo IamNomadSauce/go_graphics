@@ -74,13 +74,17 @@ func redrawProjectsPage(projectsListBox *gtk.ListBox) {
 	// Update the project list
 	for _, project := range projects {
 		row, _ := gtk.ListBoxRowNew()
+    wrapper, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
 		box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
     projectLabel, _ := gtk.LabelNew(fmt.Sprintf("Title:\n%s\nDescription\n%s", project.Title, project.Description))
     projectLabel.SetXAlign(0.025)
 		box.PackStart(projectLabel, false, false, 0)
     projectsListBox.SetSizeRequest(50, 50)
-    box.SetName("project-label")
-		row.Add(box)
+    delete_btn, _ := gtk.ButtonNewWithLabel("X")
+    wrapper.PackStart(box, false, false, 0)
+    wrapper.PackEnd(delete_btn, false, false, 0)
+    wrapper.SetName("project-label")
+		row.Add(wrapper)
 		projectsListBox.Add(row)
 	}
 
@@ -152,7 +156,7 @@ func ToDoPage() *gtk.Box {
 	// Create a ScrolledWindow
 	scrolled_window, _ := gtk.ScrolledWindowNew(nil, nil)
 	scrolled_window.SetPolicy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-	scrolled_window.SetSizeRequest(450, 250)
+	scrolled_window.SetSizeRequest(475, 250)
 
 	// Create a ListBox
 	projectsListBox, _ := gtk.ListBoxNew()
@@ -260,6 +264,11 @@ func ToDoPage() *gtk.Box {
 	})
 
 	page_box.PackStart(sidebar, false, false, 0)
+
+  // ------------------------------------------------------------------
+  //
+  // ------------------------------------------------------------------
+
 	todos_box, _ := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
 	todos_stmt := fmt.Sprintf("Todos: %d", len(todos))
 	todos_lbl, _ := gtk.LabelNew(todos_stmt)
