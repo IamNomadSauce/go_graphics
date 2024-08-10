@@ -1,0 +1,38 @@
+{{define "yield"}}
+{{template "navbar"}}
+<h1>{{len .}} Projects</h1>
+<div class="row">
+  <div class="col ">
+    {{if eq (len .) 0}}
+    <h5>No Projects</h5>
+    {{end}}
+    {{range .}}
+      {{if gt (len .Title) 0}}
+        <div class="d-flex p-1 m-1 border rounded justify-content-between">
+          <div>
+            {{.Title}}
+            {{.Description}}
+          </div>
+          <form method="POST" action="/deleteProject">
+            <input type="hidden" name="id" value="{{.Id}}" >
+            <button type="submit" class="btn btn-secondary btn-sm m-1 rounded">X</button>
+          </form>
+        </div>
+      {{end}}
+    {{end}}
+  </div>
+  <div class="col well">
+    <form action="/createProject" method="POST">
+      <div class="form-group">
+        <label for="title">Your Email</label>
+        <input type="text" class="form-control" id="title" name="title" placeholder="Project Title">
+      </div>
+      <div class="form-group">
+        <label for="description">message</label>
+        <input type="textarea" class="form-control" id="description" name="description" placeholder="Project Description">
+      </div>
+      <button class="btn btn-sm btn-warning" type="submit">Create Project</button>
+    </form>
+  </div>
+</div>
+{{end}}

@@ -2,172 +2,97 @@ package main
 
 import (
 	"fmt"
-	//"gogtk/digraph"
-	"gogtk/todo"
-  //"gogtk/finance"
-	"time"
-
-	"gogtk/db/postgres"
-	"github.com/gotk3/gotk3/gtk"
+	"net/http"
+  "html/template"
+	"hbw/views"
+  "hbw/db"
+  "time"
+  "strconv"
 )
 
-type Component struct{}
+var index *views.View
+var contact *views.View
+var projects_page *views.View
 
-type Page struct {
-	Title   string
-	Content *gtk.Box
+type Project struct {
+	Id int64
+	Title string
+	Description string
+	Created_at time.Time
+}
+
+func GetAllProjects(w http.ResponseWriter) {
+  projects, err := db.GetProjects()
+  if err != nil {
+    fmt.Println("Error getting projects from DB", err)
+  }
+  t, _ := template.ParseFiles("views/projects.html")
+  err = t.Execute(w, projects)
+  if err != nil {
+    fmt.Println("Error executing projects template with projects", err)
+  }
 }
 
 func main() {
-	startT := time.Now()
-	fmt.Println("Running go_graphics")
-
-	db, err := postgres.CreateDatabase()
-	if err != nil {
-		fmt.Println("Error Retrieving Database", err)
-	}
-	defer db.Close()
+	fmt.Println("Starting Server on port 3000")
 	
-	err = postgres.ShowDatabases(db)
-	if err != nil {
-		fmt.Errorf("Error showing databases: %v", err)
-	}
+	index = views.NewView("bootstrap", "views/index.html")
+	projects_page = views.NewView("bootstrap", "views/projects.html")
+	contact = views.NewView("bootstrap", "views/contact.html")
 
-	err = postgres.CreateTables(db)
-	if err != nil {
-		fmt.Errorf("Error Creating Tables %v", err)
-	}
+  http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	err = postgres.ListTables(db)
-	if err != nil {
-		fmt.Errorf("Error listing tables: %v", err)
-	}
+	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/contact", contactHandler)
+	http.HandleFunc("/projects", projectsHandler)
+	http.HandleFunc("/createProject", create_project_handler)
+	http.HandleFunc("/deleteProject", delete_project_handler)
+	http.ListenAndServe(":3000", nil)
+}
 
-	// ------------------------------------------------------
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n Home Page \n-----------------------\n")
+	index.Render(w, nil)
+}
 
-	gtk.Init(nil)
+func projectsHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n Projects Page \n-----------------------\n")
+  all_projects, err := db.GetProjects()
+  if err != nil {
+    fmt.Println("Error Getting All Projects from DB", err)
+  }
+	projects_page.Render(w, all_projects)
+}
 
-	// Create a new top-level window
-	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
-	if err != nil {
-		fmt.Println("Unable to create window", err)
-	}
-	win.SetTitle("go_graphics")
-	win.Connect("destroy", func() {
-		gtk.MainQuit()
-	})
+func create_project_handler(w http.ResponseWriter, r *http.Request) {
+  title := r.FormValue("title")
+  description := r.FormValue("description")
+  fmt.Println("Create Project Handler", title, description)
+  err := db.CreateProject(title, description)
+  if err != nil {
+    fmt.Println("create_projects_handler failed to add project to db", err)
+  }
+  http.Redirect(w, r, "/projects", http.StatusSeeOther)
+}
 
-	// --------------------------------------------------
+func delete_project_handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n delete_project_handler \n-----------------------\n")
+  idstr := r.FormValue("id")
+  id, err := strconv.ParseInt(idstr, 10, 64)
+  if err != nil {
+    http.Error(w, "Invalid project ID", http.StatusBadRequest)
+    return
+  }
 
-	// vbox
-	vbox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 0)
-	if err != nil {
-		fmt.Println("Unable to create vbox", err)
-	}
+  err = db.DeleteProject(id)
+  if err != nil {
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return 
+  }
+  http.Redirect(w, r, "/projects", http.StatusSeeOther)
+}
 
-	// Create a frame/border for navbar
-	frame, err := gtk.FrameNew("")
-	if err != nil {
-		fmt.Println("Unable to create border", err)
-	}
-	frame.SetShadowType(gtk.SHADOW_IN)
-
-	// ---------------------------------------------------
-
-	// Create a drawing area and set a minimum size
-	drawArea, err := gtk.DrawingAreaNew()
-	if err != nil {
-		fmt.Println("Unable to create drawing area:", err)
-	}
-	drawArea.SetSizeRequest(40, 40)
-
-  // Comment for magic temp
-
-
-	notebook, err := gtk.NotebookNew()
-	if err != nil {
-		fmt.Println("Unable to create notebook", err)
-	}
-	pages := []Page{
-		{
-			Title:   "Todo",
-			Content: todo.ToDoPage(),
-		},
-		// {
-		//   Title:   "Finances",
-		//   Content: finance.FinancePage(),
-		// },
-		// {
-		// 	Title:   "DiGraph",
-		// 	Content: digraph.DiGraphPage(),
-		// },
-		// {
-		// 	Title:   "Home",
-		// 	Content: home.HomePage(),
-		// },
-
-		// {
-		// 	Title:   "Page2",
-		// 	Content: page2.Page2(),
-		// },
-	}
-
-	// Add pages to the notebook
-	for _, page := range pages {
-		label, _ := gtk.LabelNew(page.Title)
-		notebook.AppendPage(page.Content, label)
-	}
-
-	// Create a horizontal box for the navigation bar
-	navbar, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 15)
-	if err != nil {
-		fmt.Println("Unable to create Navbar", err)
-	}
-
-	for i, page := range pages {
-		button, err := gtk.ButtonNewWithLabel(page.Title)
-		if err != nil {
-			fmt.Println("Unable to create button", page, err)
-		}
-		currIndex := i
-		button.Connect("clicked", func() {
-			fmt.Println(page, "Button was clicked")
-			notebook.SetCurrentPage(currIndex)
-		})
-		navbar.PackStart(button, false, false, 0)
-	}
-
-	// Move size_labe stuff here
-	size_label, err := gtk.LabelNew("")
-	if err != nil {
-		fmt.Println("Unable to create label")
-	}
-
-	// frame.Add(navbar)
-	// vbox.PackStart(frame, false, false, 0)
-	// vbox.PackStart(navbar, false, false, 0)
-	vbox.PackStart(notebook, true, true, 0)
-	// vbox.PackStart(size_label, false, false, 0)
-
-	win.Connect("configure-event", func() {
-		width, height := win.GetSize()
-		sizetext := fmt.Sprintf("%d %d", width, height)
-		size_label.SetText(sizetext)
-		// fmt.Println("\n Window resized to :", width, height)
-	})
-
-	// Add the drawing area to the window
-	// win.Add(drawArea)
-	win.Add(vbox)
-
-	// Show all widgets contained in the window
-	win.ShowAll()
-
-	// Begin executing the GTK main loop
-	stopT := time.Now()
-	duration := stopT.Sub(startT)
-	fmt.Println(duration)
-	win.Maximize()
-	win.ShowAll()
-	gtk.Main()
+func contactHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n Contact Page \n-----------------------\n")
+	contact.Render(w, nil)
 }
