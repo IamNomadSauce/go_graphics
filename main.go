@@ -8,13 +8,16 @@ import (
   "hbw/db"
   "time"
   "strconv"
+  "strings"
 )
 
 var index *views.View
 var contact *views.View
 var projects_page *views.View
 var finance_page *views.View
+var chart *views.View
 
+var count int = 0
 type Project struct {
 	Id int64
 	Title string
@@ -35,13 +38,18 @@ func GetAllProjects(w http.ResponseWriter) {
   }
 }
 
+var chartCount int = 0
+
 func main() {
 	fmt.Println("Starting Server on port 3000")
+
 	
 	index = views.NewView("bootstrap", "views/index.html")
   finance_page = views.NewView("bootstrap", "views/finance.html")
 	projects_page = views.NewView("bootstrap", "views/projects.html")
 	contact = views.NewView("bootstrap", "views/contact.html")
+
+  chart = views.NewView("bootstrap", "views/chart.html")
 
   http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
@@ -105,10 +113,6 @@ func contactHandler(w http.ResponseWriter, r *http.Request) {
 	contact.Render(w, nil)
 }
 
-func financeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("\n-----------------------\n Finance Page \n-----------------------\n")
-	finance_page.Render(w, nil)
-}
 
 func select_project_handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n-----------------------\n select_project_handler \n-----------------------\n")
@@ -126,3 +130,77 @@ func select_project_handler(w http.ResponseWriter, r *http.Request) {
 
 
 }
+
+
+// Finance Chart
+var data = []int{10, 20, 30, 40, 50}
+
+func generateSVG(data []int) string {
+	var svg strings.Builder
+
+	// SVG header
+	svg.WriteString(`<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">`)
+
+	// Bar properties
+	barWidth := 40
+	barSpacing := 10
+	maxHeight := 100
+
+	for i, value := range data {
+		height := (value * maxHeight) / 50 // Scale height based on max value
+		x := i * (barWidth + barSpacing)
+		y := maxHeight - height
+
+		// Create a rectangle for each bar
+		svg.WriteString(fmt.Sprintf(
+			`<rect x="%d" y="%d" width="%d" height="%d" fill="blue"/>`,
+			x, y, barWidth, height,
+		))
+	}
+
+	// SVG footer
+	svg.WriteString(`</svg>`)
+
+	return svg.String()
+}
+
+
+func financeHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n Finance Page \n-----------------------\n")
+  count++
+	finance_page.Render(w, count)
+  chartHandler(w, r)
+}
+
+
+type PageData struct {
+  Tick int
+}
+func chartHandler(w http.ResponseWriter, r *http.Request) {
+    data := PageData{
+      Tick: chartCount,
+    }
+    chart.Render(w, data)
+    ticker := time.NewTicker(1 * time.Second)
+    defer ticker.Stop()
+
+    for range ticker.C {
+      chartCount++
+        data = PageData{
+          Tick: chartCount,
+        }
+        // tmpl.Execute(w, data)
+      chart.Render(w, data)
+      w.(http.Flusher).Flush()
+    }
+}
+
+
+// func chartHandler(w http.ResponseWriter, r *http.Request) {
+// 	fmt.Println("\n-----------------------\n Chart \n-----------------------\n")
+//   //chart.Render(w, generateSVG(data))
+//   chart.Render(w, chartCount)
+// }
+
+
+
