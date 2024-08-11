@@ -13,6 +13,7 @@ import (
 var index *views.View
 var contact *views.View
 var projects_page *views.View
+var finance_page *views.View
 
 type Project struct {
 	Id int64
@@ -38,6 +39,7 @@ func main() {
 	fmt.Println("Starting Server on port 3000")
 	
 	index = views.NewView("bootstrap", "views/index.html")
+  finance_page = views.NewView("bootstrap", "views/finance.html")
 	projects_page = views.NewView("bootstrap", "views/projects.html")
 	contact = views.NewView("bootstrap", "views/contact.html")
 
@@ -45,6 +47,7 @@ func main() {
 
   // Views || Pages
 	http.HandleFunc("/", indexHandler)
+  http.HandleFunc("/finance", financeHandler)
   http.HandleFunc("/projects", projectsHandler)
 	http.HandleFunc("/contact", contactHandler)
 
@@ -102,6 +105,11 @@ func contactHandler(w http.ResponseWriter, r *http.Request) {
 	contact.Render(w, nil)
 }
 
+func financeHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n Finance Page \n-----------------------\n")
+	finance_page.Render(w, nil)
+}
+
 func select_project_handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n-----------------------\n select_project_handler \n-----------------------\n")
   idstr := r.FormValue("id")
@@ -113,7 +121,8 @@ func select_project_handler(w http.ResponseWriter, r *http.Request) {
   sel, err := strconv.ParseBool(selstr)
   fmt.Println("Selected ID", id, sel)
 
-  db.UpdateProject(id, sel)
+  //db.UpdateProject(id, sel)
   http.Redirect(w, r, "/projects", http.StatusSeeOther)
+
 
 }

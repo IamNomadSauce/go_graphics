@@ -300,7 +300,7 @@ func UpdateProject(id int64, sel bool) error {
   if err != nil {
     fmt.Println("Error Connecting to DB", err)
   }
-  query, err := db.Prepare("UPDATE projects SET (selected) = ? where id = ?")
+  query, err := db.Prepare("UPDATE projects SET (selected) = (?) where id = ?")
   defer db.Close()
   
   if err != nil {
