@@ -2,26 +2,7 @@
 {{template "navbar"}}
 <h1>{{len .}} Projects</h1>
 <div class="row">
-  <div class="col ">
-    {{if eq (len .) 0}}
-    <h5>No Projects</h5>
-    {{end}}
-    {{range .}}
-      {{if gt (len .Title) 0}}
-        <div class="d-flex p-1 m-1 border rounded justify-content-between">
-          <div>
-            {{.Title}}
-            {{.Description}}
-          </div>
-          <form method="POST" action="/deleteProject">
-            <input type="hidden" name="id" value="{{.Id}}" >
-            <button type="submit" class="btn btn-secondary btn-sm m-1 rounded">X</button>
-          </form>
-        </div>
-      {{end}}
-    {{end}}
-  </div>
-  <div class="col well">
+  <div class="col-2 well">
     <form action="/createProject" method="POST">
       <div class="form-group">
         <label for="title">Your Email</label>
@@ -33,6 +14,37 @@
       </div>
       <button class="btn btn-sm btn-warning" type="submit">Create Project</button>
     </form>
+  </div>
+  <div class="col ">
+    {{if eq (len .) 0}}
+    <h5>No Projects</h5>
+    {{end}}
+    {{range .}}
+    <form method="POST" action="/selectProject">
+      <input type="hidden" name="id" value="{{.Id}}">
+      <input type="hidden" name="selected" value="{{.Selected}}">
+      <div class="d-flex p-1 m-4 border-bottom border-warning justify-content-between project" onclick="this.parentNode.submit()">
+        <div class="flex-column">
+          <div class="">
+            Title: {{.Title}}
+          </div>
+          <div>
+            Description: {{.Description}}
+          </div>
+          <div>
+            Selected: {{.Selected}}
+          </div>
+        </div>
+        <div>
+          <form method="POST" action="/deleteProject">
+            <input type="hidden" name="id" value="{{.Id}}" >
+            <button type="submit" class="btn btn-danger btn-sm m-1 rounded">X</button>
+          </form>
+        </div>
+      </div>
+    </form>
+
+    {{end}}
   </div>
 </div>
 {{end}}

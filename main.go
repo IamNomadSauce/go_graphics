@@ -19,6 +19,7 @@ type Project struct {
 	Title string
 	Description string
 	Created_at time.Time
+  Selected bool
 }
 
 func GetAllProjects(w http.ResponseWriter) {
@@ -42,11 +43,15 @@ func main() {
 
   http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
+  // Views || Pages
 	http.HandleFunc("/", indexHandler)
+  http.HandleFunc("/projects", projectsHandler)
 	http.HandleFunc("/contact", contactHandler)
-	http.HandleFunc("/projects", projectsHandler)
+
+  // Function endpoints
 	http.HandleFunc("/createProject", create_project_handler)
 	http.HandleFunc("/deleteProject", delete_project_handler)
+	http.HandleFunc("/selectProject", select_project_handler)
 	http.ListenAndServe(":3000", nil)
 }
 
@@ -95,4 +100,20 @@ func delete_project_handler(w http.ResponseWriter, r *http.Request) {
 func contactHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n-----------------------\n Contact Page \n-----------------------\n")
 	contact.Render(w, nil)
+}
+
+func select_project_handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n select_project_handler \n-----------------------\n")
+  idstr := r.FormValue("id")
+  id, err := strconv.ParseInt(idstr, 10, 64)
+  if err != nil {
+    fmt.Println("Error converting id to string (select_project_handler)", err)
+  }
+  selstr := r.FormValue("selected")
+  sel, err := strconv.ParseBool(selstr)
+  fmt.Println("Selected ID", id, sel)
+
+  db.UpdateProject(id, sel)
+  http.Redirect(w, r, "/projects", http.StatusSeeOther)
+
 }

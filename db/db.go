@@ -31,6 +31,7 @@ type Project struct {
 	Title string
 	Description string
 	Created_at time.Time
+  Selected  bool
 }
 
 var host string
@@ -173,6 +174,7 @@ func CreateTables(db *sql.DB) error {
 			id SERIAL PRIMARY KEY,
 			title VARCHAR(100) NOT NULL,
 			description TEXT,
+      selected bool,
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)
 	`)
@@ -241,6 +243,7 @@ func GetProjects() ([]Project, error) {
             fmt.Println("Error scanning Projects table", err)
             return nil, err
         }
+        project.Selected = false
         projects = append(projects, project)
         // fmt.Println(" -", project)
     }
@@ -290,3 +293,33 @@ func DeleteProject(id int64) error {
   fmt.Printf("Project with ID %d deleted successfully\n", id)
   return nil
 }
+
+func UpdateProject(id int64, sel bool) error {
+	fmt.Println("\n---------------------------------------------------\n UpdateProject \n---------------------------------------------------\n")
+  db, err := DBConnect()
+  if err != nil {
+    fmt.Println("Error Connecting to DB", err)
+  }
+  query, err := db.Prepare("UPDATE projects SET (selected) = ? where id = ?")
+  defer db.Close()
+  
+  if err != nil {
+    fmt.Println("Error updating project", err)
+    return err
+  }
+  _, err = query.Exec(sel, id)
+  fmt.Println("Project updated")
+  return nil
+}
+
+
+
+
+
+
+
+
+
+
+
+
