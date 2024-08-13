@@ -20,9 +20,9 @@
     <h5>No Projects</h5>
     {{end}}
     {{range .}}
-    <!-- <form method="POST" action="/selectProject"> -->
+    <form method="POST" action="/selectProject">
       <input type="hidden" name="id" value="{{.Id}}">
-      <!-- <input type="hidden" name="selected" value="{{.Selected}}"> -->
+      <input type="hidden" name="selected" value="{{.Selected}}">
       <div class="d-flex p-1 m-4 border-bottom border-warning justify-content-between project" onclick="this.parentNode.submit()">
         <div class="flex-column">
           <div class="">
@@ -32,6 +32,7 @@
             Description: {{.Description}}
           </div>
           <div>
+            Todos: {{len .Todos}}
             <!-- Selected: {{.Selected}} -->
           </div>
         </div>
@@ -42,7 +43,7 @@
           </form>
         </div>
       </div>
-    <!-- </form> -->
+    </form>
 
     {{end}}
   </div>

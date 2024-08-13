@@ -26,14 +26,6 @@ type Timeframe struct {
 }
 
 
-type Project struct {
-	Id int64
-	Title string
-	Description string
-	Created_at time.Time
-  Selected  bool
-}
-
 var host string
 var port int
 var user string
@@ -146,6 +138,27 @@ func CreateDatabase() (*sql.DB, error) {
     return newDB, nil
 }
 
+func ListTables(db *sql.DB) error {
+	fmt.Println("\n------------------------------\n ListTables \n------------------------------\n")
+	rows, err := db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
+	if err != nil {
+		fmt.Println("Error listing tables", err)
+		return err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil{
+			fmt.Println("Error scanning table name", err)
+			return err
+		}
+		fmt.Println(" -", tableName)
+	}
+
+	return nil
+}
+
 func ShowDatabases(db *sql.DB) error {
 	fmt.Println("\n------------------------------\n ShowDatabases \n------------------------------\n")
 	rows, err := db.Query("SELECT datname FROM pg_database WHERE datistemplate = false")
@@ -201,26 +214,24 @@ func CreateTables(db *sql.DB) error {
 	return nil
 }
 
-func ListTables(db *sql.DB) error {
-	fmt.Println("\n------------------------------\n ListTables \n------------------------------\n")
-	rows, err := db.Query("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'")
-	if err != nil {
-		fmt.Println("Error listing tables", err)
-		return err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var tableName string
-		if err := rows.Scan(&tableName); err != nil{
-			fmt.Println("Error scanning table name", err)
-			return err
-		}
-		fmt.Println(" -", tableName)
-	}
-
-	return nil
+type Project struct {
+	Id int64
+	Title string
+	Description string
+	Created_at time.Time
+  Selected  bool
+  Todos []Todo
 }
+
+type Todo struct {
+  Id int64
+  Project_id int64
+  Title string
+  Description string
+  Completed bool
+  Created_at time.Time
+}
+
 func GetProjects() ([]Project, error) {
     fmt.Println("\n---------------------------------------------------\n Get Projects \n---------------------------------------------------\n")
 
@@ -244,6 +255,22 @@ func GetProjects() ([]Project, error) {
             return nil, err
         }
         project.Selected = false
+        todoRows, err := db.Query("SELECT id, project_id, title, description, completed, created_at FROM todos WHERE project_id = $1;", project.Id)
+        if err != nil {
+          fmt.Println("Error listing todos from db", err)
+        }
+        defer todoRows.Close()
+
+        var todos []Todo
+        for todoRows.Next() {
+          var todo Todo
+          if err := todoRows.Scan(&todo.Id, &todo.Project_id, &todo.Title, &todo.Description, &todo.Completed, &todo.Created_at); err != nil {
+              fmt.Println("Error scanning Todos table", err)
+              return nil, err
+          }
+          todos = append(todos, todo)
+        }
+        project.Todos = todos
         projects = append(projects, project)
         // fmt.Println(" -", project)
     }
