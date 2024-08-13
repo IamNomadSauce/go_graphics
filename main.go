@@ -9,6 +9,7 @@ import (
   "time"
   "strconv"
   "strings"
+  "sync"
 )
 
 var index *views.View
@@ -38,18 +39,34 @@ func GetAllProjects(w http.ResponseWriter) {
   }
 }
 
-var chartCount int = 0
+var (
+  chartCount  int
+  mu          sync.Mutex
+)
 
+func updateChartCount() {
+  mu.Lock()
+  chartCount++
+
+  mu.Unlock()
+
+}
 func main() {
 	fmt.Println("Starting Server on port 3000")
 
+  ticker := time.NewTicker(1 * time.Second)
+  go func() {
+    for range ticker.C {
+      updateChartCount()
+    }
+  }()
 	
 	index = views.NewView("bootstrap", "views/index.html")
   finance_page = views.NewView("bootstrap", "views/finance.html")
 	projects_page = views.NewView("bootstrap", "views/projects.html")
 	contact = views.NewView("bootstrap", "views/contact.html")
 
-  chart = views.NewView("bootstrap", "views/chart.html")
+  // chart = views.NewView("bootstrap", "views/chart.html")
 
   http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
@@ -58,6 +75,7 @@ func main() {
   http.HandleFunc("/finance", financeHandler)
   http.HandleFunc("/projects", projectsHandler)
 	http.HandleFunc("/contact", contactHandler)
+  http.HandleFunc("/chart", chartHandler)
 
   // Function endpoints
 	http.HandleFunc("/createProject", create_project_handler)
@@ -169,7 +187,7 @@ func financeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n-----------------------\n Finance Page \n-----------------------\n")
   count++
 	finance_page.Render(w, count)
-  chartHandler(w, r)
+  // chartHandler(w, r)
 }
 
 
@@ -177,30 +195,23 @@ type PageData struct {
   Tick int
 }
 func chartHandler(w http.ResponseWriter, r *http.Request) {
-    data := PageData{
-      Tick: chartCount,
-    }
-    chart.Render(w, data)
-    ticker := time.NewTicker(1 * time.Second)
-    defer ticker.Stop()
+	fmt.Println("\n-----------------------\n Chart \n-----------------------\n")
+  //chart.Render(w, generateSVG(data))
 
-    for range ticker.C {
-      chartCount++
-        data = PageData{
-          Tick: chartCount,
-        }
-        // tmpl.Execute(w, data)
-      chart.Render(w, data)
-      w.(http.Flusher).Flush()
-    }
+  // mu.Lock()
+  // currentCount := chartCount
+  // mu.Unlock()
+
+  // data := PageData{
+  //   Tick: currentCount,
+  // }
+  chart.Render(w, nil)
 }
 
 
-// func chartHandler(w http.ResponseWriter, r *http.Request) {
-// 	fmt.Println("\n-----------------------\n Chart \n-----------------------\n")
-//   //chart.Render(w, generateSVG(data))
-//   chart.Render(w, chartCount)
-// }
+
+
+
 
 
 
