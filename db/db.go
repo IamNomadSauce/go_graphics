@@ -223,15 +223,6 @@ type Project struct {
   Todos []Todo
 }
 
-type Todo struct {
-  Id int64
-  Project_id int64
-  Title string
-  Description string
-  Completed bool
-  Created_at time.Time
-}
-
 func GetProjects() ([]Project, error) {
     fmt.Println("\n---------------------------------------------------\n Get Projects \n---------------------------------------------------\n")
 
@@ -278,6 +269,42 @@ func GetProjects() ([]Project, error) {
     return projects, nil
 }
 
+type Todo struct {
+  Id int64
+  Project_id int64
+  Title string
+  Description string
+  Completed bool
+  Created_at time.Time
+}
+func CreateTodo(title string, projectId int) error {
+	fmt.Println("\n---------------------------------------------------\n CreateTodo \n---------------------------------------------------\n")
+	fmt.Printf("Title: %v\nProject ID: %v\n", title, projectId)
+  
+  description := ""
+  completed := false
+
+  db, err := DBConnect()
+  if err != nil {
+    fmt.Printf("Error Connecting to DB %v", err)
+  }
+  defer db.Close()
+
+	// Prepare the SQL statement
+	stmt, err := db.Prepare("INSERT INTO todos (project_id, title, description, completed) VALUES ($1, $2, $3, $4)")
+	if err != nil {
+		return fmt.Errorf("Error preparing statement: %v", err)
+	}
+	defer stmt.Close()
+
+	// Execute the statement
+	_, err = stmt.Exec(projectId, title, description, completed)
+	if err != nil {
+		return fmt.Errorf("Error inserting todo: %v", err)
+	}
+
+	return nil
+}
 func CreateProject(title, description string) error {
 	fmt.Println("\n---------------------------------------------------\n CreateProject \n---------------------------------------------------\n")
   fmt.Printf("\n Title: %s \n Description: %s", title, description)

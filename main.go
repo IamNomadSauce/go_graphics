@@ -20,7 +20,7 @@ var chart *views.View
 
 var count int = 0
 type Project struct {
-	Id int64
+	Id int
 	Title string
 	Description string
 	Created_at time.Time
@@ -81,6 +81,8 @@ func main() {
 	http.HandleFunc("/createProject", create_project_handler)
 	http.HandleFunc("/deleteProject", delete_project_handler)
 	http.HandleFunc("/selectProject", select_project_handler)
+	http.HandleFunc("/newTodo", create_todo_handler)
+
 	http.ListenAndServe(":3000", nil)
 }
 
@@ -106,6 +108,24 @@ func create_project_handler(w http.ResponseWriter, r *http.Request) {
   if err != nil {
     fmt.Println("create_projects_handler failed to add project to db", err)
   }
+  http.Redirect(w, r, "/projects", http.StatusSeeOther)
+}
+
+func create_todo_handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n create_todo_handler \n-----------------------\n")
+  todo := r.FormValue("todo")
+  project_idstr := r.FormValue("project_id")
+  project_id, err := strconv.Atoi(project_idstr)
+  if err != nil {
+    fmt.Println("Error converting str to int", err)
+  }
+
+  fmt.Println(todo, project_id)
+
+  err = db.CreateTodo(todo, project_id)
+  if err != nil {
+    fmt.Println("Error Creating Todo\n", err)
+  } 
   http.Redirect(w, r, "/projects", http.StatusSeeOther)
 }
 
@@ -148,6 +168,7 @@ func select_project_handler(w http.ResponseWriter, r *http.Request) {
 
 
 }
+
 
 
 // Finance Chart

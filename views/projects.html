@@ -5,7 +5,7 @@
   <div class="col-2 well">
     <form action="/createProject" method="POST">
       <div class="form-group">
-        <label for="title">Your Email</label>
+        <label for="title">Project Title</label>
         <input type="text" class="form-control" id="title" name="title" placeholder="Project Title">
       </div>
       <div class="form-group">
@@ -20,9 +20,8 @@
     <h5>No Projects</h5>
     {{end}}
     {{range .}}
-    <form method="POST" action="/selectProject">
-      <input type="hidden" name="id" value="{{.Id}}">
-      <input type="hidden" name="selected" value="{{.Selected}}">
+      <!-- <input type="hidden" name="id" value="{{.Id}}"> -->
+      <!-- <input type="hidden" name="selected" value="{{.Selected}}"> -->
       <div class="d-flex p-1 m-4 border-bottom border-warning justify-content-between project" onclick="this.parentNode.submit()">
         <div class="flex-column">
           <div class="">
@@ -32,18 +31,40 @@
             Description: {{.Description}}
           </div>
           <div>
-            Todos: {{len .Todos}}
+            <span class="badge text-bg-warning">Todos: {{len .Todos}}</span>
             <!-- Selected: {{.Selected}} -->
           </div>
+          <div class="d-flex justify-content-between flex-row">
+            <form method="POST" action="/newTodo">
+              <div class="d-flex justify-content-between">
+                <div class="">
+                  <input type="text" class="form-control" id="todo" name="todo" placeholder="Project Title">
+                  <input type="hidden" id="project_id" name="project_id" value="{{.Id}}">
+                </div>
+                <div class="col">
+                  <button class="btn btn-md btn-warning" type="submit">New</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        <div>
+          {{range .Todos}}
+
+            <div class="border rounded m-1 p-1">
+              {{.Title}}
+              {{.Description}}
+              {{.Completed}}
+            </div>
+          {{end}}
         </div>
         <div>
           <form method="POST" action="/deleteProject">
             <input type="hidden" name="id" value="{{.Id}}" >
-            <button type="submit" class="btn btn-danger btn-sm m-1 rounded">X</button>
+            <button type="button submit" class="btn btn-danger btn-close"></button>
           </form>
         </div>
       </div>
-    </form>
 
     {{end}}
   </div>
