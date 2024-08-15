@@ -81,7 +81,9 @@ func main() {
 	http.HandleFunc("/createProject", create_project_handler)
 	http.HandleFunc("/deleteProject", delete_project_handler)
 	http.HandleFunc("/selectProject", select_project_handler)
+  //
 	http.HandleFunc("/newTodo", create_todo_handler)
+	http.HandleFunc("/toggleTodoCompleted", toggle_todo_handler)
 
 	http.ListenAndServe(":3000", nil)
 }
@@ -127,6 +129,31 @@ func create_todo_handler(w http.ResponseWriter, r *http.Request) {
     fmt.Println("Error Creating Todo\n", err)
   } 
   http.Redirect(w, r, "/projects", http.StatusSeeOther)
+}
+
+func toggle_todo_handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n toggle_todo_handler \n-----------------------\n")
+  err := r.ParseForm()
+  if err != nil {
+    fmt.Println("Error Parsing form toggle_todo_handler", err)
+  }
+  idstr := r.FormValue("id")
+  // id, err := strconv.ParseInt(idstr, 10, 64)
+  // if err != nil {
+  //   fmt.Println("Error parsing int (toggle_todo_handler")
+  // }
+
+  boolstr := r.FormValue("completed")
+  completed, err := strconv.ParseBool(boolstr)
+  if err != nil {
+    fmt.Println("Error parsing bool (toggle_todo_handler")
+  }
+  fmt.Println(idstr, boolstr)
+
+  db.ToggleTodoCompleted(idstr, completed)
+
+  http.Redirect(w, r, "/projects", http.StatusSeeOther)
+
 }
 
 func delete_project_handler(w http.ResponseWriter, r *http.Request) {

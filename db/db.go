@@ -305,6 +305,45 @@ func CreateTodo(title string, projectId int) error {
 
 	return nil
 }
+
+// func GetTodo(id) error {
+// 	fmt.Println("\n---------------------------------------------------\n GetTodo \n---------------------------------------------------\n")
+//   fmt.Printf("%v\n", id)
+//
+//   db, err := DBConnect()
+//   if err != nil {
+//     fmt.Println("Error connecting to db GetTodo", err)
+//   }
+//   defer db.Close()
+//
+//   rows, err := db.Query("SELECT id, title, description, project_id, completed, created_at FROM todos where id = $1;")
+//   if err != nil {
+//       fmt.Println("Error listing projects", err)
+//       return nil, err
+//   }
+//   defer rows.Close()
+// }
+
+func ToggleTodoCompleted(id string, completed bool) error {
+	fmt.Println("\n---------------------------------------------------\n ToggleTodoCompleted \n---------------------------------------------------\n")
+  fmt.Printf("%v\n%v", id, completed)
+
+  db, err := DBConnect()
+    if err != nil {
+        return fmt.Errorf("Error connecting to DB: %v", err)
+    }
+    defer db.Close()
+
+    completed = !completed
+    query := "UPDATE todos SET completed = $1 WHERE id = $2"
+    _, err = db.Exec(query, completed, id)
+    if err != nil {
+        return fmt.Errorf("Error updating todo: %v", err)
+    }
+
+    return nil
+}
+
 func CreateProject(title, description string) error {
 	fmt.Println("\n---------------------------------------------------\n CreateProject \n---------------------------------------------------\n")
   fmt.Printf("\n Title: %s \n Description: %s", title, description)
