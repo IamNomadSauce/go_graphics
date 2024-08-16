@@ -387,6 +387,26 @@ func DeleteProject(id int64) error {
   return nil
 }
 
+
+func DeleteTodo(id int64) error {
+	fmt.Println("\n---------------------------------------------------\n DeleteTodo \n---------------------------------------------------\n")
+  db, err := DBConnect()
+  if err != nil {
+    fmt.Println("Error connecting to DB: %v", err)
+    return err 
+  }
+  defer db.Close()
+
+  _, err = db.Exec("DELETE FROM todos where id = $1", id)
+  if err != nil {
+    fmt.Println("Error deleting todo: %v", err)
+    return err
+  }
+
+  fmt.Printf("Todo with ID %d deleted successfully\n", id)
+  return nil
+}
+
 func UpdateProject(id int64, sel bool) error {
 	fmt.Println("\n---------------------------------------------------\n UpdateProject \n---------------------------------------------------\n")
   db, err := DBConnect()

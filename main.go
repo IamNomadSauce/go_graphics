@@ -84,6 +84,7 @@ func main() {
   //
 	http.HandleFunc("/newTodo", create_todo_handler)
 	http.HandleFunc("/toggleTodoCompleted", toggle_todo_handler)
+	http.HandleFunc("/deleteTodo", delete_todo_handler)
 
 	http.ListenAndServe(":3000", nil)
 }
@@ -153,8 +154,21 @@ func toggle_todo_handler(w http.ResponseWriter, r *http.Request) {
   db.ToggleTodoCompleted(idstr, completed)
 
   http.Redirect(w, r, "/projects", http.StatusSeeOther)
-
 }
+
+func delete_todo_handler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n delete_todo_handler \n-----------------------\n")
+  idstr := r.FormValue("id")
+  id, err := strconv.ParseInt(idstr, 10, 64)
+  if err != nil {
+    fmt.Println("Error converting string to int", err)
+  }
+  fmt.Println(id)
+
+  db.DeleteTodo(id)
+  http.Redirect(w, r, "/projects", http.StatusSeeOther)
+}
+// ---------------------
 
 func delete_project_handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n-----------------------\n delete_project_handler \n-----------------------\n")
