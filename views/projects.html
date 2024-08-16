@@ -51,36 +51,7 @@
             </div>
           </div>
         </div>
-          <div class="col-6">
-            {{range .Todos}}
-              {{if not .Completed}}
-                <div class="border border-danger rounded m-1 p-1 overflow-scroll">
-                  <form action="/toggleTodoCompleted" method="POST">
-                    <input type="hidden" name="id" value="{{.Id}}">
-                    <input type="hidden" name="completed" value="{{.Completed}}">
-                    <p for="flexCheck{{.Id}}">{{.Title}} - {{.Description}}</p>
-                    <input class="form-check-input" type="checkbox" id="flexCheck{{.Id}}" {{if .Completed}}checked{{end}} onchange="this.form.submit()">
-                  </form>
-                </div>
-              {{end}}
-            {{end}}
-          </div>
-
-          <!-- Column for Completed Todos -->
-          <div class="col-6">
-            {{range .Todos}}
-              {{if .Completed}}
-                <div class="border border-success rounded m-1 p-1 overflow-scroll">
-                  <form action="/toggleTodoCompleted" method="POST">
-                    <input type="hidden" name="id" value="{{.Id}}">
-                    <input type="hidden" name="completed" value="{{.Completed}}">
-                    <p  for="flexCheck{{.Id}}">{{.Title}} - {{.Description}}</p>
-                    <input class="form-check-input" type="checkbox" id="flexCheck{{.Id}}" {{if .Completed}}checked{{end}} onchange="this.form.submit()">
-                  </form>
-                </div>
-              {{end}}
-            {{end}}
-          </div>
+          {{template "todolist" .Todos}}
         <div>
           <form method="POST" action="/deleteProject">
             <input type="hidden" name="id" value="{{.Id}}" >

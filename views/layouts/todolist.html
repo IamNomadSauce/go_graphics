@@ -1,0 +1,19 @@
+{{define "todolist"}}
+  
+<div class="col-6">
+  {{range .}}
+    {{if not .Completed}}
+      {{template "todo" .}}
+    {{end}}
+  {{end}}
+</div>
+
+<!-- Column for Completed Todos -->
+<div class="col-6">
+  {{range .}}
+    {{if .Completed}}
+      {{template "todo" .}}
+    {{end}}
+  {{end}}
+</div>
+{{end}}
