@@ -270,7 +270,19 @@ func chartHandler(w http.ResponseWriter, r *http.Request) {
   chart.Render(w, nil)
 }
 
+// ---------------------------------------------------------------------------------------------------
+// Node Graph 
+// ---------------------------------------------------------------------------------------------------
 
+type Node struct {
+  ID            int
+  Value         string
+  Children      []Node
+}
+
+func GenerateTree() {
+
+}
 
 
 
