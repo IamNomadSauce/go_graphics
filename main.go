@@ -17,6 +17,7 @@ var contact *views.View
 var projects_page *views.View
 var finance_page *views.View
 var chart *views.View
+var nodes_page *views.View
 
 var count int = 0
 type Project struct {
@@ -65,6 +66,7 @@ func main() {
   finance_page = views.NewView("bootstrap", "views/finance.html")
 	projects_page = views.NewView("bootstrap", "views/projects.html")
 	contact = views.NewView("bootstrap", "views/contact.html")
+	nodes_page = views.NewView("bootstrap", "views/nodes_page.html")
 
   // chart = views.NewView("bootstrap", "views/chart.html")
 
@@ -76,12 +78,14 @@ func main() {
   http.HandleFunc("/projects", projectsHandler)
 	http.HandleFunc("/contact", contactHandler)
   http.HandleFunc("/chart", chartHandler)
+  http.HandleFunc("/nodes", nodesPageHandler)
 
-  // Function endpoints
+  // Projects methods
 	http.HandleFunc("/createProject", create_project_handler)
 	http.HandleFunc("/deleteProject", delete_project_handler)
 	http.HandleFunc("/selectProject", select_project_handler)
-  //
+
+  // Todos Methods
 	http.HandleFunc("/newTodo", create_todo_handler)
 	http.HandleFunc("/toggleTodoCompleted", toggle_todo_handler)
 	http.HandleFunc("/deleteTodo", delete_todo_handler)
@@ -286,8 +290,60 @@ func GenerateTree() {
 
 }
 
+func nodesPageHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("\n-----------------------\n Nodes Page \n-----------------------\n")
+  all_todos, err := db.GetTodos()
+  if err != nil {
+    fmt.Println("Error Getting All Projects from DB", err)
+  }
+  fmt.Println("Todos:", len(all_todos))
+	nodes_page.Render(w, all_todos)
+}
 
 
 
 
+func generateSVGTree(node Node, x, y, level int, svg *strings.Builder) {
+    // Define the position and appearance of the node
+    nodeRadius := 20
+    nodeColor := "lightblue"
+    textColor := "black"
 
+    // Draw the node as a circle
+    svg.WriteString(fmt.Sprintf(
+        `<circle cx="%d" cy="%d" r="%d" fill="%s" />`,
+        x, y, nodeRadius, nodeColor,
+    ))
+
+    // Draw the node's value as text
+    svg.WriteString(fmt.Sprintf(
+        `<text x="%d" y="%d" fill="%s" text-anchor="middle" dy=".3em">%s</text>`,
+        x, y, textColor, node.Value,
+    ))
+
+    // Calculate the position for the children
+    childXOffset := 100
+    childYOffset := 100
+
+    for i, child := range node.Children {
+        childX := x + (i-len(node.Children)/2)*childXOffset
+        childY := y + childYOffset
+
+        // Draw a line from the current node to the child node
+        svg.WriteString(fmt.Sprintf(
+            `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="black" />`,
+            x, y, childX, childY,
+        ))
+
+        // Recursively draw the child node
+        generateSVGTree(child, childX, childY, level+1, svg)
+    }
+}
+
+func createSVG(root Node) string {
+    var svg strings.Builder
+    svg.WriteString(`<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">`)
+    generateSVGTree(root, 400, 50, 0, &svg)
+    svg.WriteString(`</svg>`)
+    return svg.String()
+}

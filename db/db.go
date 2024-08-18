@@ -280,6 +280,30 @@ type Todo struct {
   Created_at time.Time
 }
 
+func GetTodos() ([]Todo, error) {
+	fmt.Println("\n---------------------------------------------------\n GetTodos \n---------------------------------------------------\n")
+
+  db, err := DBConnect()
+
+  todoRows, err := db.Query("SELECT id, project_id, title, description, completed, children, created_at FROM todos ;")
+  if err != nil {
+    fmt.Println("Error listing todos from db", err)
+  }
+  defer todoRows.Close()
+
+  var todos []Todo
+  for todoRows.Next() {
+    var todo Todo
+    if err := todoRows.Scan(&todo.Id, &todo.Project_id, &todo.Title, &todo.Description, &todo.Completed, &todo.Children, &todo.Created_at); err != nil {
+        fmt.Println("Error scanning Todos table", err)
+        return nil, err
+    }
+    todos = append(todos, todo)
+  }
+  return todos, nil
+
+}
+
 func CreateTodo(title string, projectId int, parent_id int) error {
 	fmt.Println("\n---------------------------------------------------\n CreateTodo \n---------------------------------------------------\n")
 	fmt.Printf("Title: %v\nProject ID: %v\n", title, projectId)
