@@ -293,23 +293,48 @@ func CreateTodo(title string, projectId int, parent_id int) error {
     fmt.Printf("Error Connecting to DB %v", err)
   }
   defer db.Close()
+  sqlStatement := `
+		INSERT INTO todos (project_id, parent_id, title, description, completed, children)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id`
+	var newTodoID int
 
-	// Prepare the SQL statement
-	stmt, err := db.Prepare("INSERT INTO todos (project_id, title, description, completed, children) VALUES ($1, $2, $3, $4, $5)")
-	if err != nil {
-		return fmt.Errorf("Error preparing statement: %v", err)
-	}
-	defer stmt.Close()
-
-	// Execute the statement
-	_, err = stmt.Exec(projectId, title, description, completed, pq.Array(children))
+	// Execute the statement and get the new todo ID
+	err = db.QueryRow(sqlStatement, projectId, parent_id, title, description, completed, pq.Array(children)).Scan(&newTodoID)
 	if err != nil {
 		return fmt.Errorf("Error inserting todo: %v", err)
 	}
 
-  // Add id to parent todo.Children
+  err = Update_todo_Children(parent_id, newTodoID)
+  if err != nil {
+    return fmt.Errorf("Error updating todo children: %v", err)
+  }
 
 	return nil
+}
+
+func Update_todo_Children(parent_id, child_id int) error{
+ 	fmt.Println("\n---------------------------------------------------\n UpdateTodo \n---------------------------------------------------\n")
+  fmt.Printf("Todo_id:\n%v\nChild_id:\n%v\n", parent_id, child_id)
+  // fmt.Printf("Todo:\n%v\nProject_id:\n%v\nParent:\n%\n", todo, projectId, parent_id)
+  db, err := DBConnect()
+	if err != nil {
+		return fmt.Errorf("Error connecting to DB: %v", err)
+	}
+	defer db.Close()
+
+	// Use array_append to add the child_id to the children array
+	query := `
+		UPDATE todos
+		SET children = array_append(children, $1)
+		WHERE id = $2
+	`
+	_, err = db.Exec(query, child_id, parent_id)
+	if err != nil {
+		return fmt.Errorf("Error updating children array: %v", err)
+	}
+
+  return nil
 }
 
 // func GetTodo(id) error {
