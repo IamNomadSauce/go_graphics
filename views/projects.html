@@ -6,11 +6,11 @@
     <form action="/createProject" method="POST">
       <div class="form-group">
         <label for="title">Project Title</label>
-        <input type="text" class="form-control" id="title" name="title" placeholder="Project Title">
+        <input type="text" class="form-control bg-secondary" id="title" name="title" placeholder="Project Title">
       </div>
       <div class="form-group">
         <label for="description">message</label>
-        <input type="textarea" class="form-control" id="description" name="description" placeholder="Project Description">
+        <input type="textarea" class="form-control bg-secondary" id="description" name="description" placeholder="Project Description">
       </div>
       <button class="btn btn-sm btn-warning" type="submit">Create Project</button>
     </form>
@@ -40,7 +40,7 @@
               <form method="POST" action="/newTodo">
                 <div class="d-flex justify-content-between">
                   <div class="">
-                    <input type="text" class="form-control" id="todo" name="todo" placeholder="Project Title">
+                    <input type="text" class="form-control bg-secondary" id="todo" name="todo" placeholder="New Todo">
                     <input type="hidden" id="project_id" name="project_id" value="{{.Id}}">
                   </div>
                   <div class="col">
@@ -51,6 +51,7 @@
             </div>
           </div>
         </div>
+
           {{template "todolist" .Todos}}
         <div>
           <form method="POST" action="/deleteProject">

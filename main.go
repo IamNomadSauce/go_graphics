@@ -117,15 +117,17 @@ func create_project_handler(w http.ResponseWriter, r *http.Request) {
 func create_todo_handler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("\n-----------------------\n create_todo_handler \n-----------------------\n")
   todo := r.FormValue("todo")
+  parent_id_str := r.FormValue("parent_id")
   project_idstr := r.FormValue("project_id")
   project_id, err := strconv.Atoi(project_idstr)
+  parent_id, err := strconv.Atoi(parent_id_str)
   if err != nil {
     fmt.Println("Error converting str to int", err)
   }
 
   fmt.Println(todo, project_id)
 
-  err = db.CreateTodo(todo, project_id)
+  err = db.CreateTodo(todo, project_id, parent_id)
   if err != nil {
     fmt.Println("Error Creating Todo\n", err)
   } 

@@ -1,6 +1,6 @@
 {{define "todo"}}
 <div class="border {{if .Completed}} border-success {{else}} border-danger {{end}} rounded m-1 p-1 overflow-scroll d-flex justify-content-between">
-    <div class="col-1">
+    <div class="col">
       <form action="/deleteTodo" method="POST" >
         <input type="hidden" name="id" value="{{.Id}}">
         <button type="submit" class="btn-danger btn-close btn-close-white"></button>
@@ -11,8 +11,21 @@
         <input class="form-check-input" type="checkbox" id="flexCheck{{.Id}}" {{if .Completed}}checked{{end}} onchange="this.form.submit()">
       </form>
     </div>
-    <div class="col-11">
-        <p  for="flexCheck{{.Id}}">{{.Title}} - {{.Description}}</p>
+    <div class="col-4">
+      <p  for="flexCheck{{.Id}}">{{.Title}} - {{.Description}} - {{len .Children}}</p>
+    </div>
+    <div class="col">
+      <form method="POST" action="/newTodo">
+        <div class="d-flex justify-content-between">
+          <div class="">
+            <input type="text" class="form-control bg-secondary" id="todo" name="todo" placeholder="New Todo">
+            <input type="hidden" id="project_id" name="project_id" value="{{.Id}}">
+          </div>
+          <div class="col">
+            <button class="btn btn-md btn-warning" type="submit">+</button>
+          </div>
+        </div>
+      </form>
     </div>
 </div>
 {{end}}

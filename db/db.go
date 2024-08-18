@@ -3,7 +3,7 @@ package db
 import (
     "database/sql"
     "fmt"
-    _ "github.com/lib/pq"
+    "github.com/lib/pq"
     "os"
     "github.com/joho/godotenv"
     "strconv"
@@ -202,6 +202,7 @@ func CreateTables(db *sql.DB) error {
 			title VARCHAR(100) NOT NULL,
 			description TEXT,
 			completed BOOLEAN DEFAULT FALSE,
+      children INTEGER[],
 			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		)
 	`)
@@ -246,7 +247,7 @@ func GetProjects() ([]Project, error) {
             return nil, err
         }
         project.Selected = false
-        todoRows, err := db.Query("SELECT id, project_id, title, description, completed, created_at FROM todos WHERE project_id = $1;", project.Id)
+        todoRows, err := db.Query("SELECT id, project_id, title, description, completed, children, created_at FROM todos WHERE project_id = $1;", project.Id)
         if err != nil {
           fmt.Println("Error listing todos from db", err)
         }
@@ -255,7 +256,7 @@ func GetProjects() ([]Project, error) {
         var todos []Todo
         for todoRows.Next() {
           var todo Todo
-          if err := todoRows.Scan(&todo.Id, &todo.Project_id, &todo.Title, &todo.Description, &todo.Completed, &todo.Created_at); err != nil {
+          if err := todoRows.Scan(&todo.Id, &todo.Project_id, &todo.Title, &todo.Description, &todo.Completed, &todo.Children, &todo.Created_at); err != nil {
               fmt.Println("Error scanning Todos table", err)
               return nil, err
           }
@@ -275,14 +276,17 @@ type Todo struct {
   Title string
   Description string
   Completed bool
+  Children pq.Int64Array 
   Created_at time.Time
 }
-func CreateTodo(title string, projectId int) error {
+
+func CreateTodo(title string, projectId int, parent_id int) error {
 	fmt.Println("\n---------------------------------------------------\n CreateTodo \n---------------------------------------------------\n")
 	fmt.Printf("Title: %v\nProject ID: %v\n", title, projectId)
   
   description := ""
   completed := false
+  var children []int
 
   db, err := DBConnect()
   if err != nil {
@@ -291,17 +295,19 @@ func CreateTodo(title string, projectId int) error {
   defer db.Close()
 
 	// Prepare the SQL statement
-	stmt, err := db.Prepare("INSERT INTO todos (project_id, title, description, completed) VALUES ($1, $2, $3, $4)")
+	stmt, err := db.Prepare("INSERT INTO todos (project_id, title, description, completed, children) VALUES ($1, $2, $3, $4, $5)")
 	if err != nil {
 		return fmt.Errorf("Error preparing statement: %v", err)
 	}
 	defer stmt.Close()
 
 	// Execute the statement
-	_, err = stmt.Exec(projectId, title, description, completed)
+	_, err = stmt.Exec(projectId, title, description, completed, pq.Array(children))
 	if err != nil {
 		return fmt.Errorf("Error inserting todo: %v", err)
 	}
+
+  // Add id to parent todo.Children
 
 	return nil
 }
