@@ -61,6 +61,12 @@ func main() {
       updateChartCount()
     }
   }()
+
+  database, err := db.DBConnect()
+  if err != nil {
+    fmt.Println("Error connecting to main db")
+  }
+  db.CreateTables(database)
 	
 	index = views.NewView("bootstrap", "views/index.html")
   finance_page = views.NewView("bootstrap", "views/finance.html")
@@ -286,19 +292,6 @@ type Node struct {
   Children      []Node
 }
 
-func GenerateTree() {
-
-}
-
-func nodesPageHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("\n-----------------------\n Nodes Page \n-----------------------\n")
-  all_todos, err := db.GetTodos()
-  if err != nil {
-    fmt.Println("Error Getting All Projects from DB", err)
-  }
-  fmt.Println("Todos:", len(all_todos))
-	nodes_page.Render(w, all_todos)
-}
 
 
 
@@ -338,6 +331,11 @@ func generateSVGTree(node Node, x, y, level int, svg *strings.Builder) {
         // Recursively draw the child node
         generateSVGTree(child, childX, childY, level+1, svg)
     }
+}
+
+func nodesPageHandler(w http.ResponseWriter, r *http.Request) {
+  
+  nodes_page.Render(w, http.StatusSeeOther)
 }
 
 func createSVG(root Node) string {

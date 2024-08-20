@@ -131,10 +131,10 @@ func CreateDatabase() (*sql.DB, error) {
 	    return nil, fmt.Errorf("Error connecting to new database: %v\n", err)
     }
     // Create Tables 
-    //err = CreateTables(db)
-    //if err != nil {
-	    //return fmt.Errorf("Error creating tables")
-    //}
+    err = CreateTables(db)
+    if err != nil {
+	    return nil, fmt.Errorf("Error creating tables")
+    }
     return newDB, nil
 }
 
@@ -182,7 +182,19 @@ func ShowDatabases(db *sql.DB) error {
 
 func CreateTables(db *sql.DB) error {
 	fmt.Println("\n------------------------------\n CreatTables \n------------------------------\n")
-	_, err := db.Exec(`
+  _, err := db.Exec(`
+		CREATE TABLE IF NOT EXISTS nodes (
+			id SERIAL PRIMARY KEY,
+      value VARCHAR(255) NOT NULL,
+      parent_id INTEGER REFERENCES nodes(id) ON DELETE CASCADE,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	if err != nil {
+		return fmt.Errorf("Error creating Nodes table")
+	}
+
+	_, err = db.Exec(`
 		CREATE TABLE IF NOT EXISTS projects (
 			id SERIAL PRIMARY KEY,
 			title VARCHAR(100) NOT NULL,
@@ -210,7 +222,7 @@ func CreateTables(db *sql.DB) error {
 		return fmt.Errorf("Error creating TODOs table")
 	}
 
-	fmt.Println("All Tables Created Successfully")
+  fmt.Println("All Tables Created successfully")
 
 	return nil
 }
@@ -479,6 +491,10 @@ func UpdateProject(id int64, sel bool) error {
   fmt.Println("Project updated")
   return nil
 }
+
+// --------------------------------------------------------------------------
+// Nodes
+// --------------------------------------------------------------------------
 
 
 
