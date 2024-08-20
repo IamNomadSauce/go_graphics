@@ -334,8 +334,13 @@ func generateSVGTree(node Node, x, y, level int, svg *strings.Builder) {
 }
 
 func nodesPageHandler(w http.ResponseWriter, r *http.Request) {
-  
-  nodes_page.Render(w, http.StatusSeeOther)
+	fmt.Println("\n-----------------------\n nodesPageHandler \n-----------------------\n")
+
+  nodes, err := db.GetNodes()
+  if err != nil {
+    fmt.Println("Error retrieving Nodes from db", err)
+  }
+  nodes_page.Render(w, nodes)
 }
 
 func createSVG(root Node) string {

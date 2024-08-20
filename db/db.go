@@ -25,6 +25,12 @@ type Timeframe struct {
     Tf    int
 }
 
+type Node struct {
+  ID int
+  Value string
+  Children []Node
+}
+
 
 var host string
 var port int
@@ -496,14 +502,46 @@ func UpdateProject(id int64, sel bool) error {
 // Nodes
 // --------------------------------------------------------------------------
 
+func GetNodes() ([]Node, error) {
+	fmt.Println("\n---------------------------------------------------\n GetNodes \n---------------------------------------------------\n")
 
+  db, err := DBConnect()
+  if err != nil {
+    return nil, fmt.Errorf("Error connecting to db: %v", err)
+  }
+  rows, err := db.Query("SELECT id, value, parent_id FROM nodes")
+  if err != nil {
+    return nil, fmt.Errorf("Error fetching nodes: %v", err)
+  }
+  defer rows.Close()
 
+  nodeMap := make(map[int]*Node)
+  var rootNodes []Node
 
+  for rows.Next() {
+    var id, parentID sql.NullInt64
+    var value string
+    if err := rows.Scan(&id, &value, &parentID); err != nil {
+      return nil, fmt.Errorf("Error scanning node: %v", err)
+    }
 
+    node := Node{
+      ID: int(id.Int64),
+      Value: value,
+    }
 
+    nodeMap[node.ID] = &node
 
-
-
+    if parentID.Valid {
+      parentNode := nodeMap[int(parentID.Int64)]
+      parentNode.Children = append(parentNode.Children, node)
+    } else {
+      rootNodes = append(rootNodes, node)
+    }
+  }
+  fmt.Println("Nodes:", len(rootNodes))
+  return rootNodes, nil
+}
 
 
 
