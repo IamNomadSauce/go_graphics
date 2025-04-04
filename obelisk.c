@@ -5,42 +5,6 @@
 static GtkWidget *notes_list;
 static gchar *current_path;
 
-static void on_new_file_clicked(GtkButton *button, gpointer user_data) {
-  GtkWidget *window = GTK_WIDGET(user_data);
-  GtkWidget *dialog = gtk_dialog_new_with_buttons("New File",
-                                                  GTK_WINDOW(window),
-                                                  GTK_DIALOG_MODAL,
-                                                  "_Cancel", GTK_RESPONSE_CANCEL,
-                                                  "_Create", GTK_RESPONSE_ACCEPT,
-                                                  NULL);
-  GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-  GtkWidget *entry = gtk_entry_new();
-  gtk_container_add(GTK_CONTAINER(content_area), entry);
-  gtk_widget_show_all(dialog);
-
-  gint result = gtk_dialog_run(GTK_DIALOG(dialog));
-  if (result == GTK_RESPONSE_ACCEPT) {
-    const gchar *filename = gtk_entry_get_text(GTK_ENTRY(entry));
-    if (filename && strlen(filename) > 0) {
-      gchar *full_path = g_build_filename(current_path, filename, NULL);
-      if (g_file_test(full_path, G_FILE_TEST_EXISTS)) {
-        GtkWidget *error_dialog = gtk_message_dialog_new(GTK_WINDOW(window),
-                                                         GTK_DIALOG_MODAL,
-                                                         GTK_MESSAGE_ERROR,
-                                                         GTK_BUTTONS_OK,
-                                                         "File already exists!");
-        gtk_dialog_run(GTK_DIALOG(error_dialog));
-        gtk_widget_destroy(error_dialog);
-      } else {
-        g_file_set_contents(full_path, "", 0, NULL);
-        populate_notes_list();
-      }
-      g_free(full_path);
-    }
-  }
-  gtk_widget_destroy(dialog);
-}
-
 static void populate_notes_list() {
     GtkListStore *store = GTK_LIST_STORE(gtk_tree_view_get_model(GTK_TREE_VIEW(notes_list)));
     gtk_list_store_clear(store);
@@ -173,27 +137,32 @@ static gboolean on_canvas_draw(GtkWidget *widget, cairo_t *cr, gpointer data) {
   return FALSE;
 }
 
-static GtkWidget *window;
 // Application activation function
 static void activate(GtkApplication *app, gpointer user_data) {
-    window = gtk_application_window_new(app);
+    // Create main window
+    GtkWidget *window = gtk_application_window_new(app);
     gtk_window_maximize(GTK_WINDOW(window));
     gtk_window_set_title(GTK_WINDOW(window), "Obelisk Notes Manager");
     gtk_window_set_default_size(GTK_WINDOW(window), 800, 600);
 
+    // Create notebook with tabs on the left
     GtkWidget *notebook = gtk_notebook_new();
     gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_LEFT);
 
-    // Notes Tab
+    // --- Notes Tab ---
     GtkWidget *notes_paned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
 
-    // Left side: Tree view and New File button
-    GtkWidget *left_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    // Left: List of notes and directories
     notes_list = gtk_tree_view_new();
-    GtkListStore *store = gtk_list_store_new(4, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_BOOLEAN);
+    GtkListStore *store = gtk_list_store_new(4, 
+                                             GDK_TYPE_PIXBUF,  // Icon
+                                             G_TYPE_STRING,    // Display name
+                                             G_TYPE_STRING,    // Full path
+                                             G_TYPE_BOOLEAN);  // Is directory
     gtk_tree_view_set_model(GTK_TREE_VIEW(notes_list), GTK_TREE_MODEL(store));
-    g_object_unref(store);
+    g_object_unref(store);  // The tree view now owns the store
 
+    // Create column with icon and text
     GtkTreeViewColumn *column = gtk_tree_view_column_new();
     gtk_tree_view_column_set_title(column, "Notes");
 
@@ -207,30 +176,44 @@ static void activate(GtkApplication *app, gpointer user_data) {
 
     gtk_tree_view_append_column(GTK_TREE_VIEW(notes_list), column);
 
-    // Set fixed width for the column
-    gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_FIXED);
-    gtk_tree_view_column_set_fixed_width(column, 200);
-
-    gtk_box_pack_start(GTK_BOX(left_box), notes_list, TRUE, TRUE, 0);
-
-    GtkWidget *new_file_button = gtk_button_new_with_label("New File");
-    gtk_box_pack_start(GTK_BOX(left_box), new_file_button, FALSE, FALSE, 0);
-    g_signal_connect(new_file_button, "clicked", G_CALLBACK(on_new_file_clicked), window);
-
-    gtk_paned_pack1(GTK_PANED(notes_paned), left_box, TRUE, FALSE);
-
-    // Right side: Editor (your existing code goes here)
-    // gtk_paned_pack2(GTK_PANED(notes_paned), editor_box, TRUE, FALSE);
-
     // Populate the list initially
     populate_notes_list();
 
+    // Right: Editor with Save button
+    GtkWidget *editor_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+    GtkWidget *save_button = gtk_button_new_with_label("Save");
+    GtkWidget *notes_editor = gtk_text_view_new();
+    gtk_box_pack_start(GTK_BOX(editor_box), save_button, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(editor_box), notes_editor, TRUE, TRUE, 0);
+
+    // Add to paned widget
+    gtk_paned_pack1(GTK_PANED(notes_paned), notes_list, TRUE, FALSE);
+    gtk_paned_pack2(GTK_PANED(notes_paned), editor_box, TRUE, FALSE);
+
+    // Connect signals
+    GtkTreeSelection *selection = gtk_tree_view_get_selection(GTK_TREE_VIEW(notes_list));
+    g_signal_connect(selection, "changed", G_CALLBACK(on_note_selected), notes_editor);
+    g_signal_connect(save_button, "clicked", G_CALLBACK(on_save_clicked), notes_editor);
+
+    // Add Notes tab
     GtkWidget *notes_label = gtk_label_new("Notes");
     gtk_notebook_append_page(GTK_NOTEBOOK(notebook), notes_paned, notes_label);
 
-    // Rest of your code (Canvas Tab, Settings Tab, etc.)
+    // --- Canvas Tab ---
+    GtkWidget *canvas = gtk_drawing_area_new();
+    g_signal_connect(canvas, "draw", G_CALLBACK(on_canvas_draw), NULL);
+    GtkWidget *canvas_label = gtk_label_new("Canvas");
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), canvas, canvas_label);
 
+    // --- Settings Tab ---
+    GtkWidget *settings = gtk_label_new("Settings go here");
+    GtkWidget *settings_label = gtk_label_new("Settings");
+    gtk_notebook_append_page(GTK_NOTEBOOK(notebook), settings, settings_label);
+
+    // Add notebook to window
     gtk_container_add(GTK_CONTAINER(window), notebook);
+
+    // Show everything
     gtk_widget_show_all(window);
 }
 
