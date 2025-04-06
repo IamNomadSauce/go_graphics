@@ -9,7 +9,8 @@ typedef enum {
     TOOL_OR,
     TOOL_XOR,
     TOOL_WIRE,
-} TOOL;
+} Tool;
+
 
 typedef struct {
     char *type;
@@ -22,7 +23,9 @@ typedef struct {
     int from_output;
     Gate *to;
     int to_input;
-} Wite;
+} Wire;
+
+void logic_simulator_draw(SDL_Renderer *renderer);
 
 void logic_simulator_init(SDL_Renderer *renderer);
 void logic_simulator_handle_event(SDL_Event *event);

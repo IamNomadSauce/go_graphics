@@ -7,34 +7,32 @@ int main(int argc, char *argv[]) {
         SDL_QUIT();
         return 1;
     }
-    SDL_Window *window = SDL_CreateWindow("Logic Gate Simulator", 
-                                        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
-                                        800, 600, SDL_WINDOW_RESIZABLE);
+    SDL_Window *window = SDL_CreateWindow("Logic Gate Simulator", 800, 600, SDL_WINDOW_RESIZABLE);
     if (!window) {
         SDL_Log("SDL_CreateWindow failed: %s", SDL_GetError());
         SDL_Quit();
         return 1;
     }
+    SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 
-    SDL_Rendderer *renderer = SDL_CreateRenderer(window, NULL, SDL_RENDERER_ACCELERATED)
+    SDL_Renderer *renderer = SDL_CreateRenderer(window, NULL);
     if (!renderer) {
         SDL_Log("SDL_CreateRenderer failed: %s", SDL_GetError());
+        SDL_DestroyWindow(window);
         SDL_Quit();
         return 1;
     }
 
     logic_simulator_init(renderer);
-
-    SDL_bool running = SDL_TRUE;
+    int running = 1;
     SDL_Event event;
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
-                running = SDL_FALSE;
+               running = 0;
             }
             logic_simulator_handle_event(&event);
         }
-
         SDL_SetRenderDrawColor(renderer, 255,255,255,255);
         SDL_RenderClear(renderer);
         logic_simulator_draw(renderer);
