@@ -1,6 +1,9 @@
 #include "app.h"
 #include "render.h"
 
+static void handle_sidebar_click(App* app, int y);
+static void handle_canvas_click(App* app, int x, int y);
+
 void app_init(App* app) {
     app->nodes = NULL;
     app->wires = NULL;
@@ -53,7 +56,7 @@ void app_render(App* app, SDL_Renderer* renderer) {
     render_nodes(app, renderer);
     render_wires(app, renderer);
 
-    SDL_RenderPresend(renderer);
+    SDL_RenderPresent(renderer);
 }
 
 void app_cleanup(App* app) {
@@ -65,12 +68,12 @@ void app_cleanup(App* app) {
         g_list_free(node->connection_points);
         free(node);
     }
-    g_list_free(app-nodes);
+    g_list_free(app->nodes);
     for (GList* l = app->wires; l != NULL; l = l->next) {
         free((Wire*)l->data);
     }
     g_list_free(app->wires);
-    if (app->wire_start_cp) free(ap->wire_start_cp);
+    if (app->wire_start_cp) free(app->wire_start_cp);
     app->nodes = NULL;
     app->wires = NULL;
     app->wire_start_cp = NULL;
@@ -92,7 +95,7 @@ static void handle_canvas_click(App* app, int x, int y) {
             app->wire_start_cp->y = y;
         } else {
             Wire* new_wire = malloc(sizeof(Wire));
-            new_wire->from = NULL:
+            new_wire->from = NULL;
             new_wire->to = NULL;
             new_wire->to_input_index = 0;
             app->wires = g_list_append(app->wires, new_wire);
