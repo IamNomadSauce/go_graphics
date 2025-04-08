@@ -41,5 +41,13 @@ void render_nodes(App* app, SDL_Renderer* renderer) {
 }
 
 void render_wires(App* app, SDL_Renderer* renderer) {
-
+    for (Glist* l = app->wires; l != NULL; l = l->next) {
+        Wire* wire = (wire*)l->data;
+        int from_x = wire->from->x + (wire->from->type == NODE_GATE ? 50 : 10);
+        int from_y = wire->from->y + 15;
+        int to_x = wire->to->x;
+        int to_y = wire->to->y + 15 + wire->to_input_index * 10);
+        SDL_SetRendererDrawColor(renderer, 0, 0, 0, 255);
+        SDL_RenderDrawLine(renderer, from_x, from_y, to_x, to_y);
+    }
 }

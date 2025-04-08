@@ -29,7 +29,7 @@ int main() {
     int running = 1;
     while (running) {
         SDL_Event event;
-        While (SDL_PollEvent(&event)) {
+        while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
                 running = 0;
             }
@@ -37,6 +37,7 @@ int main() {
         }
         app_update(&app);
         app_render(&app, renderer);
+        SDL_RenderPresent(renderer);
     }
     app_cleanup(&app);
     SDL_DestroyRenderer(renderer);

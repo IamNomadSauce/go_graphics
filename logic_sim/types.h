@@ -4,6 +4,9 @@
 #include <SDL3/SDL.h>
 #include <glib.h>
 
+// Forward declaration of Node
+typedef struct Node Node;
+
 typedef enum {
     NODE_INPUT,
     NODE_GATE,
@@ -35,25 +38,25 @@ typedef struct {
 } ConnectionPoint;
 
 typedef struct {
+    Node* from;  // Now valid due to forward declaration
+    Node* to;
+    int to_input_index;
+} Wire;
+
+typedef struct Node {
     NodeType type;
     int x, y;
     union {
         struct { bool value; } input;
         struct {
             GateType gate_type;
-            GList* inputs;
+            GList* inputs; // List of Wire*
             bool output;
         } gate;
-        struct { wire* input; bool value; } output;
+        struct { Wire* input; bool value; } output;
     } u;
     GList* connection_points;
 } Node;
-
-typedef struct {
-    Node* from;
-    Node* to;
-    int to_input_index;
-} Wire;
 
 typedef struct {
     GList* nodes;
