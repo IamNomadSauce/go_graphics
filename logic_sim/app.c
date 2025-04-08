@@ -1,15 +1,43 @@
+#include <SDL_ttf.h>
 #include "app.h"
 #include "render.h"
 
 static void handle_sidebar_click(App* app, int y);
 static void handle_canvas_click(App* app, int x, int y);
 
-void app_init(App* app) {
+void app_init(App* app, SDL_Renderer* renderer) {
     app->nodes = NULL;
     app->wires = NULL;
     app->current_tool = TOOL_NONE;
     app->drawing_wire = false;
     app->wire_start_cp = NULL;
+
+    if (TTF_Init() < 0) {
+        SDL_Log("TTF_Init failed: %s", TTF_GetError());
+        return;
+    }
+
+    app->font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16);
+    if (!app->font) {
+        SDL_Log("TTF_OpenFont failed: %s", TTF_GetError());
+        return;
+    }
+
+    const char* labels[] = {"Input", "AND", "OR", "NOT", "XOR", "Wire", "Output"};
+    for (int i = 0; i < 7; i++) {
+        SDL_Surface* surface = TTF_RenderText_Blended(
+            app->font, labels[i], (SDL_Color){255, 255, 255, 255}
+        );
+        if (!surface) {
+            SDL_Log("TTF_RenderText_Blended failed: %s", TTF_GetError());
+            continue;
+        }
+        app->label_textures[i] = SDL_CreateTextureFromSurface(renderer, surface);
+        SDL_FreeSurface(surface);
+        if (!app->label_textures[i]) {
+            SDL_Log("SDL_CreateTextureFromSurface failed: %s", SDL_GetError());
+        }
+    }
 }
 
 void app_handle_event(App* app, SDL_Event* event) {
@@ -60,23 +88,22 @@ void app_render(App* app, SDL_Renderer* renderer) {
 }
 
 void app_cleanup(App* app) {
-    for (GList* l = app->nodes; l != NULL; l = l->next) {
-        Node* node = (Node*)l->data;
-        if (node->type == NODE_GATE) {
-            g_list_free(node->u.gate.inputs);
-        }
-        g_list_free(node->connection_points);
-        free(node);
-    }
-    g_list_free(app->nodes);
-    for (GList* l = app->wires; l != NULL; l = l->next) {
-        free((Wire*)l->data);
-    }
-    g_list_free(app->wires);
-    if (app->wire_start_cp) free(app->wire_start_cp);
+    // Free existing resources
+    g_list_free_full(app->nodes, free);
+    g_list_free_full(app->wires, free);
     app->nodes = NULL;
     app->wires = NULL;
-    app->wire_start_cp = NULL;
+
+    // Free label textures and font
+    for (int i = 0; i < 7; i++) {
+        if (app->label_textures[i]) {
+            SDL_DestroyTexture(app->label_textures[i]);
+        }
+    }
+    if (app->font) {
+        TTF_CloseFont(app->font);
+    }
+    TTF_Quit();
 }
 
 static void handle_sidebar_click(App* app, int y) {

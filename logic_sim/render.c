@@ -1,19 +1,37 @@
 #include "render.h"
 
+// render.c
+#include "render.h"
+
 void render_sidebar(App* app, SDL_Renderer* renderer) {
-    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
+    // Draw sidebar background
+    SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255); // Light gray
     SDL_FRect sidebar = {0.0f, 0.0f, 100.0f, 600.0f};
     SDL_RenderFillRect(renderer, &sidebar);
 
-    const char* labels[] = {"Input", "AND", "OR", "NOT", "XOR", "Wire", "Output"};
+    // Draw buttons with labels
     for (int i = 0; i < 7; i++) {
         SDL_FRect button = {10.0f, 10.0f + i * 50.0f, 80.0f, 40.0f};
-        if (app->current_tool == i + 1) {
-            SDL_SetRenderDrawColor(renderer, 150, 150, 255, 255);
+        // Highlight selected tool (adjust Tool enum offset as needed)
+        if (app->current_tool == i + 2) { // Assuming TOOL_INPUT = 2, etc.
+            SDL_SetRenderDrawColor(renderer, 150, 150, 255, 255); // Light blue
         } else {
-            SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+            SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); // Dark gray
         }
         SDL_RenderFillRect(renderer, &button);
+
+        // Render label texture
+        if (app->label_textures[i]) {
+            int tex_w, tex_h;
+            SDL_QueryTexture(app->label_textures[i], NULL, NULL, &tex_w, &tex_h);
+            SDL_FRect dest_rect = {
+                .x = button.x + (button.w - tex_w) / 2.0f, // Center horizontally
+                .y = button.y + (button.h - tex_h) / 2.0f, // Center vertically
+                .w = (float)tex_w,
+                .h = (float)tex_h
+            };
+            SDL_RenderCopy(renderer, app->label_textures[i], NULL, &dest_rect);
+        }
     }
 }
 

@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <SDL3/SDL.h>
+#include <SDL_ttf.h>
 #include <glib.h>
 
 // Forward declaration of Node
@@ -64,6 +65,8 @@ typedef struct {
     Tool current_tool;
     bool drawing_wire;
     ConnectionPoint* wire_start_cp;
+    TTF_Font* font;
+    SDL_Texture* label_textures[7];
 } App;
 
 #endif
