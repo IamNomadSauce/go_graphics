@@ -2,7 +2,7 @@
 #define TYPES_H
 
 #include <SDL3/SDL.h>
-#include <SDL_ttf.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <glib.h>
 
 // Forward declaration of Node

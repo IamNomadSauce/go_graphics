@@ -1,4 +1,5 @@
-#include <SDL_ttf.h>
+#include <SDL3/SDL.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include "app.h"
 #include "render.h"
 
@@ -13,27 +14,27 @@ void app_init(App* app, SDL_Renderer* renderer) {
     app->wire_start_cp = NULL;
 
     if (TTF_Init() < 0) {
-        SDL_Log("TTF_Init failed: %s", TTF_GetError());
+        SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return;
     }
 
     app->font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16);
     if (!app->font) {
-        SDL_Log("TTF_OpenFont failed: %s", TTF_GetError());
+        SDL_Log("TTF_OpenFont failed: %s", SDL_GetError());
         return;
     }
 
     const char* labels[] = {"Input", "AND", "OR", "NOT", "XOR", "Wire", "Output"};
     for (int i = 0; i < 7; i++) {
         SDL_Surface* surface = TTF_RenderText_Blended(
-            app->font, labels[i], (SDL_Color){255, 255, 255, 255}
+            app->font, labels[i], strlen(labels[i]), (SDL_Color){255, 255, 255, 255}
         );
         if (!surface) {
-            SDL_Log("TTF_RenderText_Blended failed: %s", TTF_GetError());
+            SDL_Log("TTF_RenderText_Blended failed: %s", SDL_GetError());
             continue;
         }
         app->label_textures[i] = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_FreeSurface(surface);
+        SDL_DestroySurface(surface);
         if (!app->label_textures[i]) {
             SDL_Log("SDL_CreateTextureFromSurface failed: %s", SDL_GetError());
         }
@@ -88,20 +89,24 @@ void app_render(App* app, SDL_Renderer* renderer) {
 }
 
 void app_cleanup(App* app) {
-    // Free existing resources
+    // Free nodes and wires (existing code)
     g_list_free_full(app->nodes, free);
     g_list_free_full(app->wires, free);
     app->nodes = NULL;
     app->wires = NULL;
 
-    // Free label textures and font
+    // Free label textures
     for (int i = 0; i < 7; i++) {
         if (app->label_textures[i]) {
-            SDL_DestroyTexture(app->label_textures[i]);
+            SDL_DestroyTexture(app->label_textures[i]);  // Use SDL_DestroyTexture
+            app->label_textures[i] = NULL;
         }
     }
+
+    // Free font and TTF cleanup (if applicable)
     if (app->font) {
         TTF_CloseFont(app->font);
+        app->font = NULL;
     }
     TTF_Quit();
 }

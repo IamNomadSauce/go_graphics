@@ -5,7 +5,7 @@
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
     SDL_Window* window = SDL_CreateWindow("Logic Gate Simulator", 800, 600, 0);
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL, SDL_RENDERER_ACCELERATED);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
 
     App app;
     app_init(&app, renderer); // Pass renderer to app_init
