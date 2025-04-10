@@ -7,37 +7,62 @@ static void handle_sidebar_click(App* app, int y);
 static void handle_canvas_click(App* app, int x, int y);
 
 void app_init(App* app, SDL_Renderer* renderer) {
+    
     app->nodes = NULL;
     app->wires = NULL;
     app->current_tool = TOOL_NONE;
     app->drawing_wire = false;
     app->wire_start_cp = NULL;
+    app->font = NULL;
 
+    // Initialize label_textures to NULL to avoid garbage values
+    for (int i = 0; i < 7; i++) {
+        app->label_textures[i] = NULL;
+    }
+
+    // Initialize SDL_ttf
     if (TTF_Init() < 0) {
         SDL_Log("TTF_Init failed: %s", SDL_GetError());
         return;
     }
 
+    // Load the font
     app->font = TTF_OpenFont("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 16);
     if (!app->font) {
-        SDL_Log("TTF_OpenFont failed: %s", SDL_GetError());
-        return;
+        SDL_Log("Failed to load font: %s", SDL_GetError());
+        return; // Exit if font loading fails
     }
 
+    SDL_Log("Font loaded successfully");
+
+    // Define button labels
     const char* labels[] = {"Input", "AND", "OR", "NOT", "XOR", "Wire", "Output"};
     for (int i = 0; i < 7; i++) {
+        // Create surface with corrected TTF_RenderText_Blended call
+        // SDL_Surface* surface = TTF_RenderText_Blended(app->font, labels[i], (SDL_Color){255, 255, 255, 255});
         SDL_Surface* surface = TTF_RenderText_Blended(
-            app->font, labels[i], strlen(labels[i]), (SDL_Color){255, 255, 255, 255}
+            app->font,
+            labels[i],
+            strlen(labels[i]),
+            (SDL_Color){255, 255, 255, 255}
         );
         if (!surface) {
-            SDL_Log("TTF_RenderText_Blended failed: %s", SDL_GetError());
+            SDL_Log("Failed to render text for %s: %s", labels[i], SDL_GetError());
             continue;
         }
-        app->label_textures[i] = SDL_CreateTextureFromSurface(renderer, surface);
-        SDL_DestroySurface(surface);
-        if (!app->label_textures[i]) {
-            SDL_Log("SDL_CreateTextureFromSurface failed: %s", SDL_GetError());
+        if (surface) {
+            SDL_Log("Surface for |%s| w=%d, h=%d", labels[i], surface->w, surface->h);
         }
+        SDL_Log("Surface created for '%s'", labels[i]);
+
+        // Create texture from surface
+        app->label_textures[i] = SDL_CreateTextureFromSurface(renderer, surface);
+        if (!app->label_textures[i]) {
+            SDL_Log("Failed to create texture for %s: %s", labels[i], SDL_GetError());
+        } else {
+            SDL_Log("Texture created for '%s'", labels[i]);
+        }
+        SDL_DestroySurface(surface); // Free surface immediately after use
     }
 }
 
@@ -142,7 +167,7 @@ static void handle_canvas_click(App* app, int x, int y) {
         new_node->connection_points = NULL;
         if (app->current_tool == TOOL_INPUT) {
             new_node->type = NODE_INPUT;
-            new_node->u.output.value = false;
+            new_node->u.input.value = false; // Corrected from u.output.value
         } else if (app->current_tool == TOOL_OUTPUT) {
             new_node->type = NODE_OUTPUT;
             new_node->u.output.input = NULL;
@@ -155,4 +180,4 @@ static void handle_canvas_click(App* app, int x, int y) {
         }
         app->nodes = g_list_append(app->nodes, new_node);
     }
-} 
+}

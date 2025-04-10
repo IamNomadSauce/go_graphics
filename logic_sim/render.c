@@ -20,11 +20,14 @@ void render_sidebar(App* app, SDL_Renderer* renderer) {
         // Render the label texture if it exists
         if (app->label_textures[i]) {
             float tex_w, tex_h;
-            // Replace SDL_QueryTexture with SDL_GetTextureSize for SDL3 compatibility
             if (SDL_GetTextureSize(app->label_textures[i], &tex_w, &tex_h) != 0) {
-                SDL_Log("Failed to get texture size: %s", SDL_GetError());
-                continue; // Skip this texture on error
+                // SDL_Log("label_textures |%s|tex_w |%f| tex_h |%f|", labels[i], tex_w, tex_h);
+                SDL_Log("Failed to get texture size for button %d: %s", i, SDL_GetError());
+                continue;
             }
+            // Log texture dimensions for debugging
+            SDL_Log("Button %d texture: w=%f, h=%f", i, tex_w, tex_h);
+
             SDL_FRect dest_rect = {
                 .x = button.x + (button.w - tex_w) / 2.0f, // Center horizontally
                 .y = button.y + (button.h - tex_h) / 2.0f, // Center vertically
@@ -32,6 +35,8 @@ void render_sidebar(App* app, SDL_Renderer* renderer) {
                 .h = tex_h
             };
             SDL_RenderTexture(renderer, app->label_textures[i], NULL, &dest_rect);
+        } else {
+            SDL_Log("No texture for button %d", i);
         }
     }
 }
