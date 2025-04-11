@@ -67,6 +67,8 @@ typedef struct {
     ConnectionPoint* wire_start_cp;
     TTF_Font* font;
     SDL_Texture* label_textures[7];
+    int label_widths[7];
+    int label_heights[7];
 } App;
 
 #endif

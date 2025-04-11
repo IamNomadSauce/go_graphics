@@ -7,6 +7,8 @@ static void handle_sidebar_click(App* app, int y);
 static void handle_canvas_click(App* app, int x, int y);
 
 void app_init(App* app, SDL_Renderer* renderer) {
+
+    SDL_Log("Renderer in app_init: %p", renderer);
     
     app->nodes = NULL;
     app->wires = NULL;
@@ -14,6 +16,8 @@ void app_init(App* app, SDL_Renderer* renderer) {
     app->drawing_wire = false;
     app->wire_start_cp = NULL;
     app->font = NULL;
+    memset(app->label_widths, 0, sizeof(app->label_widths));
+    memset(app->label_heights, 0, sizeof(app->label_heights));
 
     // Initialize label_textures to NULL to avoid garbage values
     for (int i = 0; i < 7; i++) {
@@ -38,8 +42,6 @@ void app_init(App* app, SDL_Renderer* renderer) {
     // Define button labels
     const char* labels[] = {"Input", "AND", "OR", "NOT", "XOR", "Wire", "Output"};
     for (int i = 0; i < 7; i++) {
-        // Create surface with corrected TTF_RenderText_Blended call
-        // SDL_Surface* surface = TTF_RenderText_Blended(app->font, labels[i], (SDL_Color){255, 255, 255, 255});
         SDL_Surface* surface = TTF_RenderText_Blended(
             app->font,
             labels[i],
@@ -50,19 +52,15 @@ void app_init(App* app, SDL_Renderer* renderer) {
             SDL_Log("Failed to render text for %s: %s", labels[i], SDL_GetError());
             continue;
         }
-        if (surface) {
-            SDL_Log("Surface for |%s| w=%d, h=%d", labels[i], surface->w, surface->h);
-        }
-        SDL_Log("Surface created for '%s'", labels[i]);
-
-        // Create texture from surface
         app->label_textures[i] = SDL_CreateTextureFromSurface(renderer, surface);
         if (!app->label_textures[i]) {
             SDL_Log("Failed to create texture for %s: %s", labels[i], SDL_GetError());
         } else {
-            SDL_Log("Texture created for '%s'", labels[i]);
+            SDL_Log("Texture created for '%s' with w=%d, h=%d", labels[i], surface->w, surface->h);
+            app->label_widths[i] = surface->w;
+            app->label_heights[i] = surface->h;
         }
-        SDL_DestroySurface(surface); // Free surface immediately after use
+        SDL_DestroySurface(surface);
     }
 }
 
