@@ -1,5 +1,9 @@
 #include <SDL3/SDL.h>
 #include "render.h"
+#include "gates.h"
+#include <math.h>
+
+
 
 void render_sidebar(App* app, SDL_Renderer* renderer) {
     // Draw the sidebar background
@@ -40,22 +44,27 @@ void render_sidebar(App* app, SDL_Renderer* renderer) {
 void render_nodes(App* app, SDL_Renderer* renderer) {
     for (GList* l = app->nodes; l != NULL; l = l->next) {
         Node* node = (Node*)l->data;
-        switch (node->type) {
-            case NODE_INPUT:
-                SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255); // Green for input nodes
-                SDL_FRect input_rect = {(float)node->x - 10.0f, (float)node->y - 10.0f, 20.0f, 20.0f};
-                SDL_RenderFillRect(renderer, &input_rect);
-                break;
-            case NODE_GATE:
-                SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // Blue for gate nodes
-                SDL_FRect gate_rect = {(float)node->x, (float)node->y, 50.0f, 30.0f};
-                SDL_RenderFillRect(renderer, &gate_rect);
-                break;
-            case NODE_OUTPUT:
-                SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red for output nodes
-                SDL_FRect output_rect = {(float)node->x - 10.0f, (float)node->y - 10.0f, 20.0f, 20.0f};
-                SDL_RenderFillRect(renderer, &output_rect);
-                break;
+        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        if (node->type == NODE_GATE) {
+            switch (node->u.gate.gate_type) {
+                case GATE_AND:
+                    draw_and_gate(renderer, node->x, node->y, 50, 30);
+                    break;
+                case GATE_OR:
+                    draw_or_gate(renderer, node->x, node->y, 50, 30);
+                    break;
+                case GATE_NOT:
+                    draw_not_gate(renderer, node->x, node->y, 50, 30);
+                    break;
+                case GATE_XOR:
+                    draw_xor_gate(renderer, node->x, node->y, 50, 30);
+                    break;
+            }
+        } else if (node->type == NODE_INPUT) {
+            draw_arc(renderer, (float)(node->x + 10), (float)(node->y + 10), 10.0f, 0.0f, 2.0f * (float)M_PI, 20);
+        } else if (node->type == NODE_OUTPUT) {
+            SDL_FRect rect = {node->x, node->y, 20, 20};
+            SDL_RenderRect(renderer, &rect);  // Updated to SDL_RenderRect
         }
     }
 }
