@@ -65,6 +65,7 @@ void app_init(App* app, SDL_Renderer* renderer) {
 }
 
 void app_handle_event(App* app, SDL_Event* event) {
+    // SDL_Log("app_handle_event %c", event->type);
     if (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
         int x = event->button.x;
         int y = event->button.y;
@@ -135,13 +136,18 @@ void app_cleanup(App* app) {
 }
 
 static void handle_sidebar_click(App* app, int y) {
+    SDL_Log("handle_sidebar_click: |%d|", y);
+    SDL_Log(":current_tool |%d|", app->current_tool);
     int index = (y - 10) / 50;
     if (index >= 0 && index < 7) {
         app->current_tool = index + 2;
+        SDL_Log("Index |%d| current_tool |%d|", index, app->current_tool);
     }
 }
 
 static void handle_canvas_click(App* app, int x, int y) {
+    SDL_Log("handle_canvas_click: |%d| |%d|", x, y);
+    SDL_Log("%d", app->current_tool);
     if (app->current_tool == TOOL_WIRE) {
         if (!app->drawing_wire) {
             app->drawing_wire = true;

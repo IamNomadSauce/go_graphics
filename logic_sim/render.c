@@ -7,7 +7,7 @@
 
 void render_sidebar(App* app, SDL_Renderer* renderer) {
     // Draw the sidebar background
-    SDL_Log("Renderer in render_sidebar: %p", renderer);
+    // SDL_Log("Renderer in render_sidebar: %p", renderer);
     SDL_SetRenderDrawColor(renderer, 200, 200, 200, 255);
     SDL_FRect sidebar = {0.0f, 0.0f, 100.0f, 600.0f};
     SDL_RenderFillRect(renderer, &sidebar);
@@ -26,7 +26,7 @@ void render_sidebar(App* app, SDL_Renderer* renderer) {
         if (app->label_textures[i] && app->label_widths[i] > 0 && app->label_heights[i] > 0) {
             float tex_w = (float)app->label_widths[i];
             float tex_h = (float)app->label_heights[i];
-            SDL_Log("Button %d texture: w=%f, h=%f", i, tex_w, tex_h);
+            // SDL_Log("Button %d texture: w=%f, h=%f", i, tex_w, tex_h);
 
             SDL_FRect dest_rect = {
                 .x = button.x + (button.w - tex_w) / 2.0f, // Center horizontally

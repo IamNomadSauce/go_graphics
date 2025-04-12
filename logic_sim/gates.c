@@ -16,6 +16,7 @@ void draw_arc(SDL_Renderer* renderer, float cx, float cy, float radius, float st
 }
 
 void draw_and_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
+    // SDL_Log("AND Gate");
     const int arc_segments = 10;
     const float r = h / 2.0f;
     const float cx = x + w - r;
@@ -31,6 +32,7 @@ void draw_and_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
 }
     
 void draw_or_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
+    // SDL_Log("OR Gate");
     const int arc_segments = 10;
     const float input_radius = w / 2.0f;
     const float input_cx = x - w / 4.0f;
@@ -45,6 +47,7 @@ void draw_or_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
 }
 
 void draw_not_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
+    // SDL_Log("NOT Gate");
     const int circle_segments = 10;
     const float circle_radius = 5.0f;
     const float circle_cx = x + w - circle_radius;
@@ -58,6 +61,7 @@ void draw_not_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
 }
 
 void draw_xor_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
+    // SDL_Log("XOR Gate");
     const int arc_segments = 10;
     const float input_radius = w / 2.0f;
     const float input_cx = x - w / 4.0f;
