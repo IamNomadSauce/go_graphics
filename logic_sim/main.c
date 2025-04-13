@@ -10,6 +10,16 @@ int main(int argc, char* argv[]) {
         SDL_Log("Renderer creation failed: %s", SDL_GetError());
     }
 
+    static const Tool sidebar_tools[7] = {
+        TOOL_INPUT,
+        TOOL_AND,
+        TOOL_OR,
+        TOOL_NOT,
+        TOOL_XOR,
+        TOOL_WIRE,
+        TOOL_OUTPUT
+    };
+
     App app;
     app_init(&app, renderer); // Pass renderer to app_init
 

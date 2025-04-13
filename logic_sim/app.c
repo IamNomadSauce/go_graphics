@@ -3,8 +3,18 @@
 #include "app.h"
 #include "render.h"
 
+const Tool sidebar_tools[7] = {
+    TOOL_INPUT,
+    TOOL_AND,
+    TOOL_OR,
+    TOOL_NOT,
+    TOOL_XOR,
+    TOOL_WIRE,
+    TOOL_OUTPUT
+};
 static void handle_sidebar_click(App* app, int y);
 static void handle_canvas_click(App* app, int x, int y);
+
 
 void app_init(App* app, SDL_Renderer* renderer) {
 
@@ -140,7 +150,7 @@ static void handle_sidebar_click(App* app, int y) {
     SDL_Log(":current_tool |%d|", app->current_tool);
     int index = (y - 10) / 50;
     if (index >= 0 && index < 7) {
-        app->current_tool = index + 2;
+        app->current_tool = sidebar_tools[index];
         SDL_Log("Index |%d| current_tool |%d|", index, app->current_tool);
     }
 }
@@ -183,5 +193,6 @@ static void handle_canvas_click(App* app, int x, int y) {
             new_node->u.gate.output = false;
         }
         app->nodes = g_list_append(app->nodes, new_node);
+        SDL_Log("Added node at (%d, %d) of type %d", x, y, new_node->type);
     }
 }

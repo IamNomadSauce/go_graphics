@@ -32,6 +32,7 @@ typedef enum {
     TOOL_XOR
 } Tool;
 
+extern const Tool sidebar_tools[7];
 typedef struct {
     int x, y;
     bool is_input;

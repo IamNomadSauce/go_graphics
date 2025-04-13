@@ -15,7 +15,7 @@ void render_sidebar(App* app, SDL_Renderer* renderer) {
     // Render each button in the sidebar
     for (int i = 0; i < 7; i++) {
         SDL_FRect button = {10.0f, 10.0f + i * 50.0f, 80.0f, 40.0f};
-        if (app->current_tool == i + 2) {
+        if (app->current_tool == sidebar_tools[i]) {
             SDL_SetRenderDrawColor(renderer, 150, 150, 255, 255); // Highlight selected tool
         } else {
             SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255); // Default button color
@@ -44,7 +44,7 @@ void render_sidebar(App* app, SDL_Renderer* renderer) {
 void render_nodes(App* app, SDL_Renderer* renderer) {
     for (GList* l = app->nodes; l != NULL; l = l->next) {
         Node* node = (Node*)l->data;
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         if (node->type == NODE_GATE) {
             switch (node->u.gate.gate_type) {
                 case GATE_AND:
@@ -61,10 +61,12 @@ void render_nodes(App* app, SDL_Renderer* renderer) {
                     break;
             }
         } else if (node->type == NODE_INPUT) {
+            SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
             draw_arc(renderer, (float)(node->x + 10), (float)(node->y + 10), 10.0f, 0.0f, 2.0f * (float)M_PI, 20);
         } else if (node->type == NODE_OUTPUT) {
+            SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             SDL_FRect rect = {node->x, node->y, 20, 20};
-            SDL_RenderRect(renderer, &rect);  // Updated to SDL_RenderRect
+            SDL_RenderRect(renderer, &rect);
         }
     }
 }
