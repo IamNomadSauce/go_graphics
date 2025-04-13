@@ -1,0 +1,3 @@
+- [x] Fix indexing on sidebar_tool
+- [ ] Fix gate shapes for xor && or
+- [ ] Fix wire input & output segfault on second click

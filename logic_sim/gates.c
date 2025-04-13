@@ -32,19 +32,30 @@ void draw_and_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
 }
     
 void draw_or_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
-    // SDL_Log("OR Gate");
     const int arc_segments = 10;
-    const float input_radius = w / 2.0f;
-    const float input_cx = x - w / 4.0f;
+    const float input_radius = w / 1.5f;  // Adjusted for proportion
+    const float input_cx = x - w / 6.0f;  // Shifted center
     const float cy = y + h / 2.0f;
 
+    // Fit arc within height
+    float sin_alpha = (h / 2.0f) / input_radius;
+    float alpha = asin(sin_alpha);
+    float start_theta = M_PI - alpha;  // Top to bottom
+    float end_theta = M_PI + alpha;
 
-    draw_arc(renderer, input_cx, cy, input_radius, M_PI / 3, 2 * M_PI / 3, arc_segments);
+    draw_arc(renderer, input_cx, cy, input_radius, start_theta, end_theta, arc_segments);
 
-    SDL_RenderLine(renderer, x + w / 4, y, x + w, y + h /2);
-
-    SDL_RenderLine(renderer, x + w / 4, y + h, x + w, y + h / 2);
+    // Connect lines from arc endpoints
+    float start_x = input_cx + input_radius * cos(start_theta);
+    float start_y = cy + input_radius * sin(start_theta);
+    float end_x = input_cx + input_radius * cos(end_theta);
+    float end_y = cy + input_radius * sin(end_theta);
+    float output_x = x + w;
+    float output_y = y + h / 2.0f;
+    SDL_RenderLine(renderer, start_x, start_y, output_x, output_y);
+    SDL_RenderLine(renderer, end_x, end_y, output_x, output_y);
 }
+
 
 void draw_not_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
     // SDL_Log("NOT Gate");
@@ -61,18 +72,20 @@ void draw_not_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
 }
 
 void draw_xor_gate(SDL_Renderer* renderer, float x, float y, float w, float h) {
-    // SDL_Log("XOR Gate");
+    draw_or_gate(renderer, x, y, w, h);  // Draw base OR shape
+
     const int arc_segments = 10;
-    const float input_radius = w / 2.0f;
-    const float input_cx = x - w / 4.0f;
+    const float input_radius = w / 1.5f;
+    const float input_cx = x - w / 6.0f;
     const float cy = y + h / 2.0f;
 
-    draw_arc(renderer, input_cx, cy, input_radius, M_PI / 3, 2 * M_PI / 3, arc_segments);
-    SDL_RenderLine(renderer, x + w / 4, y, x + w, y + h / 2);
-    SDL_RenderLine(renderer, x + w / 4, y, x + w, y + h /2);
-    SDL_RenderLine(renderer, x + w / 4, y + h, x + w,  y + h / 2);
+    // Distinct extra arc
+    const float xor_arc_radius = input_radius * 0.6f;
+    const float xor_arc_cx = input_cx - w / 12.0f;
+    float sin_alpha = (h / 2.0f) / xor_arc_radius;
+    float alpha = asin(sin_alpha);
+    float start_theta = M_PI - alpha;
+    float end_theta = M_PI + alpha;
 
-    const float xor_arc_radius = input_radius * 0.8f;
-    const float xor_arc_cx = input_cx - w/ 8.0f;
-    draw_arc(renderer, xor_arc_cx, cy, xor_arc_radius, M_PI / 3, 2 * M_PI / 3, arc_segments);
+    draw_arc(renderer, xor_arc_cx, cy, xor_arc_radius, start_theta, end_theta, arc_segments);
 }

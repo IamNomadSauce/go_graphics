@@ -48,16 +48,16 @@ void render_nodes(App* app, SDL_Renderer* renderer) {
         if (node->type == NODE_GATE) {
             switch (node->u.gate.gate_type) {
                 case GATE_AND:
-                    draw_and_gate(renderer, node->x, node->y, 50, 30);
+                    draw_and_gate(renderer, node->x, node->y, 50, 50);
                     break;
                 case GATE_OR:
-                    draw_or_gate(renderer, node->x, node->y, 50, 30);
+                    draw_or_gate(renderer, node->x, node->y, 50, 50);
                     break;
                 case GATE_NOT:
-                    draw_not_gate(renderer, node->x, node->y, 50, 30);
+                    draw_not_gate(renderer, node->x, node->y, 50, 50);
                     break;
                 case GATE_XOR:
-                    draw_xor_gate(renderer, node->x, node->y, 50, 30);
+                    draw_xor_gate(renderer, node->x, node->y, 50, 50);
                     break;
             }
         } else if (node->type == NODE_INPUT) {
